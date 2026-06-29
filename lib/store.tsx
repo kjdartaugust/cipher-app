@@ -13,6 +13,7 @@ import {
   encryptMessage,
   generateConversationKey,
   generateKeyPair,
+  keyFingerprint,
   openSealedKey,
   sealKeyForMember,
 } from './crypto';
@@ -61,6 +62,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   });
   const [ready, setReady] = useState(false);
   const [typing, setTyping] = useState<Record<string, string[]>>({});
+  const [blocked, setBlocked] = useState<string[]>([]);
   const keys = useRef<Keystore>({ pairs: {}, sealed: {} });
   const convKeyCache = useRef<Record<string, string>>({});
 
@@ -548,6 +550,22 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         users: s.users.map((u) => (u.id === ME_ID ? { ...u, ...patch } : u)),
       }));
     },
+    blocked,
+    toggleBlock: async (userId) => {
+      setBlocked((b) => (b.includes(userId) ? b.filter((i) => i !== userId) : [...b, userId]));
+    },
+    setPrivacy: async (isPrivate) => {
+      setState((s) => ({ ...s, users: s.users.map((u) => (u.id === ME_ID ? { ...u, private: isPrivate } : u)) }));
+    },
+    changePassword: async () => {
+      // Demo mode has no real auth — succeed silently.
+    },
+    deleteAccount: async () => {
+      localStorage.removeItem(LS_KEY);
+      localStorage.removeItem(LS_KEYS);
+      window.location.href = '/';
+    },
+    myFingerprint: () => keyFingerprint(me.publicKey),
     signOut: async () => {},
   };
 

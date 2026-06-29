@@ -10,6 +10,7 @@ import {
   encryptMessage,
   generateConversationKey,
   generateKeyPair,
+  keyFingerprint,
   openSealedKey,
   randomSalt,
   sealKeyForMember,
@@ -30,6 +31,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const [typing, setTyping] = useState<Record<string, string[]>>({});
+  const [blocked, setBlocked] = useState<string[]>([]);
 
   const sb = useRef<SupabaseClient | null>(null);
   const myId = useRef<string>('');
@@ -65,6 +67,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         const data = await loadEverything(supabase!, userId);
         sealed.current = data.sealedKeys;
         convIdsRef.current = data.conversations.map((c) => c.id);
+        setBlocked(data.blocked);
         const myPub = data.users.find((u) => u.id === userId)?.publicKey;
         const mismatch = !keypair.current || (!!myPub && keypair.current.publicKey !== myPub);
         if (cancelled) return;
@@ -163,6 +166,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       if (!supabase || !myId.current) return;
       const data = await loadEverything(supabase, myId.current);
       sealed.current = data.sealedKeys;
+      setBlocked(data.blocked);
       setState((s) => ({
         ...s,
         users: data.users,
@@ -466,6 +470,41 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     if (error) throw new Error(error.message);
   }, []);
 
+  const toggleBlock = useCallback(async (userId: string) => {
+    const isBlocked = blocked.includes(userId);
+    setBlocked((b) => (isBlocked ? b.filter((i) => i !== userId) : [...b, userId]));
+    if (isBlocked) await db.unblock(supa(), mine(), userId);
+    else await db.block(supa(), mine(), userId);
+  }, [blocked]);
+
+  const setPrivacy = useCallback(async (isPrivate: boolean) => {
+    setState((s) => ({ ...s, users: s.users.map((u) => (u.id === mine() ? { ...u, private: isPrivate } : u)) }));
+    await db.updateProfile(supa(), mine(), { private: isPrivate });
+  }, []);
+
+  const changePassword = useCallback(async (newPassword: string) => {
+    const supabase = supa();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message);
+    // The private key was wrapped with the OLD password — re-wrap it so recovery
+    // on other devices keeps working with the new password.
+    if (keypair.current) {
+      const salt = await randomSalt();
+      const encPrivate = await wrapPrivateKey(keypair.current.privateKey, newPassword, salt);
+      await supabase.from('profiles').update({ enc_private_key: encPrivate, key_salt: salt }).eq('id', mine());
+    }
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const supabase = supa();
+    // Removing the profile cascades the user's posts, messages, memberships, etc.
+    await db.deleteProfile(supabase, mine());
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  }, []);
+
+  const myFingerprint = useCallback(() => keyFingerprint(me.publicKey), [me.publicKey]);
+
   // Recover this device's key pair from the password-wrapped key in the DB, then
   // re-decrypt everything. Returns false if the password is wrong.
   const unlock = useCallback(async (password: string): Promise<boolean> => {
@@ -512,11 +551,12 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value: AppContextValue = {
-    ...state, me, ready, typing, needsUnlock,
+    ...state, me, ready, typing, needsUnlock, blocked,
     toggleLike, toggleSave, sharePost, addComment, createPost, toggleFollow,
     viewStory, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
-    markAllNotificationsRead, userById, updateProfile, unlock, signOut,
+    markAllNotificationsRead, userById, updateProfile, unlock,
+    toggleBlock, setPrivacy, changePassword, deleteAccount, myFingerprint, signOut,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

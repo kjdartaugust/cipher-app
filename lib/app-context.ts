@@ -55,6 +55,13 @@ export interface AppContextValue extends AppState {
   userById: (id: string) => User;
   // profile
   updateProfile: (patch: { name?: string; bio?: string; avatar?: string }) => Promise<void>;
+  // settings & security
+  blocked: string[]; // userIds the current user has blocked
+  toggleBlock: (userId: string) => Promise<void>;
+  setPrivacy: (isPrivate: boolean) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  myFingerprint: () => Promise<string>;
   // auth (no-op in demo mode)
   signOut: () => Promise<void>;
 }

@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, UserCheck, UserPlus } from 'lucide-react';
+import Link from 'next/link';
+import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, SlidersHorizontal, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/post/post-card';
 import { EditProfileModal } from './edit-profile-modal';
@@ -13,7 +14,7 @@ import type { User } from '@/lib/types';
 import { compactNumber } from '@/lib/utils';
 
 export function ProfileView({ user }: { user: User }) {
-  const { me, posts, stories, toggleFollow, createConversation, userById, signOut } = useApp();
+  const { me, posts, stories, toggleFollow, createConversation, userById, signOut, blocked, toggleBlock } = useApp();
   const router = useRouter();
   const isMe = user.id === me.id;
   const following = me.following.includes(user.id);
@@ -65,8 +66,9 @@ export function ProfileView({ user }: { user: User }) {
             {isMe ? (
               <>
                 <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
+                <Link href="/settings" className="btn-ghost text-sm" aria-label="Settings"><SlidersHorizontal className="h-4 w-4" /></Link>
                 {!IS_DEMO && (
-                  <button onClick={signOut} className="btn-ghost text-sm text-rose-300 hover:text-rose-200"><LogOut className="h-4 w-4" /> Log out</button>
+                  <button onClick={signOut} className="btn-ghost text-sm text-rose-300 hover:text-rose-200" aria-label="Log out"><LogOut className="h-4 w-4" /></button>
                 )}
               </>
             ) : (
@@ -77,6 +79,14 @@ export function ProfileView({ user }: { user: User }) {
                   className={following ? 'btn-ghost text-sm' : 'btn-primary text-sm'}
                 >
                   {following ? <><UserCheck className="h-4 w-4" /> Following</> : <><UserPlus className="h-4 w-4" /> Follow</>}
+                </button>
+                <button
+                  onClick={() => toggleBlock(user.id)}
+                  className={`btn-ghost text-sm ${blocked.includes(user.id) ? 'text-rose-300' : 'text-white/50'}`}
+                  aria-label={blocked.includes(user.id) ? 'Unblock' : 'Block'}
+                  title={blocked.includes(user.id) ? 'Unblock' : 'Block'}
+                >
+                  <UserX className="h-4 w-4" />
                 </button>
               </>
             )}

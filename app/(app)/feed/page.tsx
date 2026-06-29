@@ -12,12 +12,12 @@ import { useApp } from '@/lib/store';
 type Tab = 'for-you' | 'following';
 
 export default function FeedPage() {
-  const { posts, me } = useApp();
+  const { posts, me, blocked } = useApp();
   const compose = useCompose();
   const [tab, setTab] = useState<Tab>('for-you');
 
   const sorted = useMemo(() => {
-    const list = [...posts];
+    const list = posts.filter((p) => !blocked.includes(p.authorId));
     if (tab === 'following') {
       return list
         .filter((p) => me.following.includes(p.authorId) || p.authorId === me.id)
@@ -32,7 +32,7 @@ export default function FeedPage() {
       const affinity = me.following.includes(p.authorId) ? 25 : 0;
       return engagement + affinity + (p.trendingScore ?? 0) * 0.5 - ageHours * 1.5;
     }
-  }, [posts, tab, me.following]);
+  }, [posts, tab, me.following, blocked]);
 
   return (
     <div className="flex">

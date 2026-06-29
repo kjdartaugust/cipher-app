@@ -10,6 +10,7 @@ export interface User {
   following: string[];
   verified?: boolean;
   online?: boolean;
+  private?: boolean;
 }
 
 export interface Post {

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LogOut, PenSquare } from 'lucide-react';
+import { LogOut, PenSquare, SlidersHorizontal } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar';
 import { NAV_ITEMS } from '@/lib/nav';
@@ -70,6 +70,9 @@ export function Sidebar({ onCompose }: { onCompose: () => void }) {
             <p className="truncate text-sm font-semibold">{me.name}</p>
             <p className="truncate text-xs text-white/45">@{me.username}</p>
           </div>
+        </Link>
+        <Link href="/settings" title="Settings" className="rounded-xl p-2.5 text-white/40 transition hover:bg-white/5 hover:text-white">
+          <SlidersHorizontal className="h-5 w-5" />
         </Link>
         {!IS_DEMO && (
           <button

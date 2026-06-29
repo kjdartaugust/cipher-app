@@ -11,23 +11,23 @@ import { useApp } from '@/lib/store';
 import { compactNumber } from '@/lib/utils';
 
 export default function DiscoverPage() {
-  const { users, posts, me, toggleFollow } = useApp();
+  const { users, posts, me, toggleFollow, blocked } = useApp();
   const [query, setQuery] = useState('');
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
     return users.filter(
-      (u) => u.id !== me.id && (u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q))
+      (u) => u.id !== me.id && !blocked.includes(u.id) && (u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q))
     );
-  }, [query, users, me.id]);
+  }, [query, users, me.id, blocked]);
 
   const trending = useMemo(
     () => [...posts].sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0)).slice(0, 6),
     [posts]
   );
 
-  const suggested = users.filter((u) => u.id !== me.id && !me.following.includes(u.id));
+  const suggested = users.filter((u) => u.id !== me.id && !me.following.includes(u.id) && !blocked.includes(u.id));
 
   return (
     <div className="mx-auto max-w-2xl border-x border-white/5">

@@ -22,6 +22,7 @@ export interface LoadedData {
   messages: Message[];
   notifications: AppNotification[];
   sealedKeys: Record<string, string>; // conversationId -> my sealed key
+  blocked: string[];
 }
 
 // ----------------------------- loading -------------------------------------
@@ -37,6 +38,7 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
     { data: storyViews },
     { data: myMemberships },
     { data: notifications },
+    { data: blocks },
   ] = await Promise.all([
     supabase.from('profiles').select('*'),
     supabase.from('follows').select('*'),
@@ -48,6 +50,7 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
     supabase.from('story_views').select('*'),
     supabase.from('conversation_members').select('*').eq('user_id', myId),
     supabase.from('notifications').select('*').order('created_at', { ascending: false }),
+    supabase.from('blocks').select('blocked_id').eq('blocker_id', myId),
   ]);
 
   const convIds = (myMemberships ?? []).map((m: any) => m.conversation_id);
@@ -89,6 +92,7 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
     publicKey: p.public_key ?? '',
     verified: p.verified ?? false,
     online: false,
+    private: p.private ?? false,
     followers: (follows ?? []).filter((f: any) => f.following_id === p.id).map((f: any) => f.follower_id),
     following: (follows ?? []).filter((f: any) => f.follower_id === p.id).map((f: any) => f.following_id),
   }));
@@ -159,6 +163,7 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
     messages: mappedMsgs,
     notifications: mappedNotifs,
     sealedKeys,
+    blocked: (blocks ?? []).map((b: any) => b.blocked_id),
   };
 }
 
@@ -236,6 +241,11 @@ export const db = {
 
   publicKeys: (s: DB, ids: string[]) => s.from('profiles').select('id,public_key').in('id', ids),
 
-  updateProfile: (s: DB, id: string, patch: { name?: string; bio?: string; avatar?: string }) =>
+  updateProfile: (s: DB, id: string, patch: { name?: string; bio?: string; avatar?: string; private?: boolean }) =>
     s.from('profiles').update(patch).eq('id', id),
+
+  myBlocks: (s: DB, me: string) => s.from('blocks').select('blocked_id').eq('blocker_id', me),
+  block: (s: DB, me: string, target: string) => s.from('blocks').insert({ blocker_id: me, blocked_id: target }),
+  unblock: (s: DB, me: string, target: string) => s.from('blocks').delete().match({ blocker_id: me, blocked_id: target }),
+  deleteProfile: (s: DB, id: string) => s.from('profiles').delete().eq('id', id),
 };

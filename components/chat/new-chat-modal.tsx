@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { useApp } from '@/lib/store';
 
 export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { users, me, createConversation } = useApp();
+  const { users, me, createConversation, blocked } = useApp();
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
@@ -17,7 +17,7 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
   const [error, setError] = useState<string | null>(null);
 
   const candidates = users.filter(
-    (u) => u.id !== me.id && u.name.toLowerCase().includes(query.toLowerCase())
+    (u) => u.id !== me.id && !blocked.includes(u.id) && u.name.toLowerCase().includes(query.toLowerCase())
   );
 
   function toggle(id: string) {

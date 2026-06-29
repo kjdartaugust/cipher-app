@@ -3,16 +3,17 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Bookmark, Grid3x3, MessageCircle, Settings, UserCheck, UserPlus } from 'lucide-react';
+import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, UserCheck, UserPlus } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/post/post-card';
 import { EditProfileModal } from './edit-profile-modal';
 import { useApp } from '@/lib/store';
+import { IS_DEMO } from '@/lib/config';
 import type { User } from '@/lib/types';
 import { compactNumber } from '@/lib/utils';
 
 export function ProfileView({ user }: { user: User }) {
-  const { me, posts, stories, toggleFollow, createConversation, userById } = useApp();
+  const { me, posts, stories, toggleFollow, createConversation, userById, signOut } = useApp();
   const router = useRouter();
   const isMe = user.id === me.id;
   const following = me.following.includes(user.id);
@@ -62,7 +63,12 @@ export function ProfileView({ user }: { user: User }) {
 
           <div className="mt-4 flex gap-2">
             {isMe ? (
-              <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
+              <>
+                <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
+                {!IS_DEMO && (
+                  <button onClick={signOut} className="btn-ghost text-sm text-rose-300 hover:text-rose-200"><LogOut className="h-4 w-4" /> Log out</button>
+                )}
+              </>
             ) : (
               <>
                 <button onClick={message} className="btn-ghost text-sm"><MessageCircle className="h-4 w-4" /> Message</button>

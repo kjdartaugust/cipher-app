@@ -51,6 +51,8 @@ export interface AppContextValue extends AppState {
   // notifications
   markAllNotificationsRead: () => void;
   userById: (id: string) => User;
+  // profile
+  updateProfile: (patch: { name?: string; bio?: string; avatar?: string }) => Promise<void>;
   // auth (no-op in demo mode)
   signOut: () => Promise<void>;
 }

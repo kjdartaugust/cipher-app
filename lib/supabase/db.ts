@@ -235,4 +235,7 @@ export const db = {
     s.from('notifications').update({ read: true }).match({ user_id: userId, type: 'message', target_id: convId }),
 
   publicKeys: (s: DB, ids: string[]) => s.from('profiles').select('id,public_key').in('id', ids),
+
+  updateProfile: (s: DB, id: string, patch: { name?: string; bio?: string; avatar?: string }) =>
+    s.from('profiles').update(patch).eq('id', id),
 };

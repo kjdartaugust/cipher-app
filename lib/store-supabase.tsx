@@ -449,6 +449,12 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     db.markNotifRead(supa(), mine());
   }, []);
 
+  const updateProfile = useCallback(async (patch: { name?: string; bio?: string; avatar?: string }) => {
+    setState((s) => ({ ...s, users: s.users.map((u) => (u.id === mine() ? { ...u, ...patch } : u)) }));
+    const { error } = await db.updateProfile(supa(), mine(), patch);
+    if (error) throw new Error(error.message);
+  }, []);
+
   const signOut = useCallback(async () => {
     await sb.current?.auth.signOut();
     window.location.href = '/login';
@@ -459,7 +465,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     toggleLike, toggleSave, sharePost, addComment, createPost, toggleFollow,
     viewStory, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
-    markAllNotificationsRead, userById, signOut,
+    markAllNotificationsRead, userById, updateProfile, signOut,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

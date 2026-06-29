@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Bookmark, Grid3x3, MessageCircle, Settings, UserCheck, UserPlus } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/post/post-card';
+import { EditProfileModal } from './edit-profile-modal';
 import { useApp } from '@/lib/store';
 import type { User } from '@/lib/types';
 import { compactNumber } from '@/lib/utils';
@@ -16,6 +17,7 @@ export function ProfileView({ user }: { user: User }) {
   const isMe = user.id === me.id;
   const following = me.following.includes(user.id);
   const [tab, setTab] = useState<'posts' | 'saved'>('posts');
+  const [editing, setEditing] = useState(false);
 
   const userPosts = posts.filter((p) => p.authorId === user.id).sort((a, b) => b.createdAt - a.createdAt);
   const savedPosts = posts.filter((p) => p.saves.includes(me.id));
@@ -46,7 +48,7 @@ export function ProfileView({ user }: { user: User }) {
           </div>
           <div className="mb-2 flex gap-2">
             {isMe ? (
-              <button className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
+              <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
             ) : (
               <>
                 <button onClick={message} className="btn-ghost text-sm"><MessageCircle className="h-4 w-4" /> Message</button>
@@ -134,6 +136,8 @@ export function ProfileView({ user }: { user: User }) {
           {tab === 'saved' ? 'No saved posts yet.' : 'No posts yet.'}
         </p>
       )}
+
+      {isMe && <EditProfileModal open={editing} onClose={() => setEditing(false)} />}
     </div>
   );
 }

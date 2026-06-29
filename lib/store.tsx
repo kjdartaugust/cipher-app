@@ -540,6 +540,12 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     decryptedFor,
     markAllNotificationsRead,
     userById,
+    updateProfile: async (patch) => {
+      setState((s) => ({
+        ...s,
+        users: s.users.map((u) => (u.id === ME_ID ? { ...u, ...patch } : u)),
+      }));
+    },
     signOut: async () => {},
   };
 

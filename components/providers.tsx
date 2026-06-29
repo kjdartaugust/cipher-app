@@ -1,7 +1,11 @@
 'use client';
 
-import { AppProvider } from '@/lib/store';
+import { IS_DEMO } from '@/lib/config';
+import { DemoProvider } from '@/lib/store';
+import { SupabaseProvider } from '@/lib/store-supabase';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <AppProvider>{children}</AppProvider>;
+  // Demo mode = seeded localStorage store; otherwise the live Supabase-backed store.
+  const Provider = IS_DEMO ? DemoProvider : SupabaseProvider;
+  return <Provider>{children}</Provider>;
 }

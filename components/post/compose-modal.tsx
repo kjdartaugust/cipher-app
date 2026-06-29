@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ImagePlus, Sparkles, X } from 'lucide-react';
+import { ImagePlus, Loader2, Sparkles, Upload, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { useApp } from '@/lib/store';
+import { uploadPublic } from '@/lib/supabase/storage';
 
 const SAMPLE_IMAGES = [
   '1517842645767-c639042777db',
@@ -19,6 +20,19 @@ export function ComposeModal({ open, onClose }: { open: boolean; onClose: () => 
   const { me, createPost } = useApp();
   const [text, setText] = useState('');
   const [media, setMedia] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadPublic('posts', file);
+    // Fall back to a local preview if storage isn't configured (e.g. demo mode).
+    setMedia(url ?? URL.createObjectURL(file));
+    setUploading(false);
+    e.target.value = '';
+  }
 
   function submit() {
     if (!text.trim() && !media) return;
@@ -83,6 +97,13 @@ export function ComposeModal({ open, onClose }: { open: boolean; onClose: () => 
                 <ImagePlus className="h-3.5 w-3.5" /> Add a photo
               </p>
               <div className="flex gap-2">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-dashed border-white/20 text-white/50 transition hover:border-cipher-500 hover:text-cipher-300"
+                >
+                  {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickFile} />
                 {SAMPLE_IMAGES.map((id) => (
                   <button
                     key={id}

@@ -74,13 +74,21 @@ persisted to `localStorage`. Just `npm run dev` and explore.
 
 ### Connecting Supabase (production)
 1. Create a project at [supabase.com](https://supabase.com).
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor (tables, RLS, realtime, storage buckets, new-user trigger).
-3. Put your keys in `.env.local`:
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor (tables, RLS, realtime, new-user trigger).
+   - If you ran an **early** copy of the schema, also run [`supabase/fix-rls.sql`](supabase/fix-rls.sql) — it installs recursion-safe conversation policies, the INSERT/UPDATE policies needed to create chats, the realtime publication, and the storage buckets.
+3. **Auth** → Providers → Email: for the smoothest demo, turn **off** "Confirm email" (otherwise new accounts must confirm via the link, handled at `/auth/callback`).
+4. Create the storage buckets `avatars`, `posts`, `stories` (public) — `fix-rls.sql` does this for you.
+5. Put your keys in `.env.local` (both required):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
-4. Restart the dev server — Cipher switches off demo mode automatically.
+6. Restart the dev server — Cipher switches off demo mode automatically. Sign up creates
+   a profile (via DB trigger) and generates your on-device key pair.
+
+> **Note:** the private key lives only in the browser's `localStorage`. Signing in on a
+> new device generates a fresh key pair and republishes the public key, so messages sealed
+> to the old key won't be readable there — expected for this demo's key model.
 
 ---
 

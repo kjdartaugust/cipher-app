@@ -189,21 +189,26 @@ create policy "own stories write"   on public.stories  for all using (auth.uid()
 create policy "story views"         on public.story_views for all using (auth.uid() = viewer_id) with check (auth.uid() = viewer_id);
 
 -- Conversations & messages: members only
-create policy "member can see conversation" on public.conversations for select using (
-  exists (select 1 from public.conversation_members m where m.conversation_id = id and m.user_id = auth.uid())
-);
-create policy "see own membership" on public.conversation_members for select using (
-  user_id = auth.uid() or exists (
-    select 1 from public.conversation_members m where m.conversation_id = conversation_id and m.user_id = auth.uid()
-  )
-);
-create policy "member can read messages" on public.messages for select using (
-  exists (select 1 from public.conversation_members m where m.conversation_id = messages.conversation_id and m.user_id = auth.uid())
-);
+-- SECURITY DEFINER helper avoids the infinite-recursion footgun that arises when
+-- a conversation_members policy queries conversation_members.
+create or replace function public.is_member(conv uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.conversation_members
+    where conversation_id = conv and user_id = auth.uid()
+  );
+$$;
+
+create policy "member can see conversation" on public.conversations for select using (public.is_member(id));
+create policy "authenticated can create conversation" on public.conversations for insert with check (auth.uid() is not null);
+create policy "member can update conversation" on public.conversations for update using (public.is_member(id));
+
+create policy "see conversation membership" on public.conversation_members for select using (public.is_member(conversation_id));
+create policy "authenticated can add members" on public.conversation_members for insert with check (auth.uid() is not null);
+
+create policy "member can read messages" on public.messages for select using (public.is_member(conversation_id));
 create policy "member can send messages" on public.messages for insert with check (
-  sender_id = auth.uid() and exists (
-    select 1 from public.conversation_members m where m.conversation_id = messages.conversation_id and m.user_id = auth.uid()
-  )
+  sender_id = auth.uid() and public.is_member(conversation_id)
 );
 create policy "sender can edit own messages" on public.messages for update using (sender_id = auth.uid());
 create policy "reactions by members"  on public.message_reactions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -219,8 +224,15 @@ create policy "anyone can notify" on public.notifications for insert with check 
 -- ---------------------------------------------------------------------------
 alter publication supabase_realtime add table public.messages;
 alter publication supabase_realtime add table public.message_receipts;
+alter publication supabase_realtime add table public.message_reactions;
 alter publication supabase_realtime add table public.notifications;
 alter publication supabase_realtime add table public.story_views;
+alter publication supabase_realtime add table public.posts;
+alter publication supabase_realtime add table public.likes;
+alter publication supabase_realtime add table public.saves;
+alter publication supabase_realtime add table public.comments;
+alter publication supabase_realtime add table public.follows;
+alter publication supabase_realtime add table public.stories;
 
 -- Storage buckets (create in dashboard or via API):
 --   insert into storage.buckets (id, name, public) values

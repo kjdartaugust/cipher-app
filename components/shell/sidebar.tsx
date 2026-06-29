@@ -3,16 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { PenSquare } from 'lucide-react';
+import { LogOut, PenSquare } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar';
 import { NAV_ITEMS } from '@/lib/nav';
 import { useApp } from '@/lib/store';
+import { IS_DEMO } from '@/lib/config';
 import { cn } from '@/lib/utils';
 
 export function Sidebar({ onCompose }: { onCompose: () => void }) {
   const pathname = usePathname();
   const { me, badges } = useBadges();
+  const { signOut } = useApp();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col border-r border-white/5 px-4 py-6 lg:flex">
@@ -58,16 +60,27 @@ export function Sidebar({ onCompose }: { onCompose: () => void }) {
         </button>
       </nav>
 
-      <Link
-        href="/profile"
-        className="mt-4 flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-white/5"
-      >
-        <Avatar src={me.avatar} alt={me.name} size={40} online />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{me.name}</p>
-          <p className="truncate text-xs text-white/45">@{me.username}</p>
-        </div>
-      </Link>
+      <div className="mt-4 flex items-center gap-2">
+        <Link
+          href="/profile"
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-white/5"
+        >
+          <Avatar src={me.avatar} alt={me.name} size={40} online />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{me.name}</p>
+            <p className="truncate text-xs text-white/45">@{me.username}</p>
+          </div>
+        </Link>
+        {!IS_DEMO && (
+          <button
+            onClick={signOut}
+            title="Sign out"
+            className="rounded-xl p-2.5 text-white/40 transition hover:bg-white/5 hover:text-rose-300"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+        )}
+      </div>
     </aside>
   );
 }

@@ -1,14 +1,13 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+  AppContext,
+  type AppContextValue,
+  type AppState,
+  uid,
+  useApp,
+} from './app-context';
 import {
   decryptMessage,
   encryptMessage,
@@ -49,60 +48,9 @@ interface Keystore {
   sealed: Record<string, Record<string, string>>;
 }
 
-interface AppState {
-  users: User[];
-  posts: Post[];
-  stories: Story[];
-  conversations: Conversation[];
-  messages: Message[];
-  notifications: AppNotification[];
-}
+export { useApp };
 
-interface AppContextValue extends AppState {
-  me: User;
-  ready: boolean;
-  typing: Record<string, string[]>; // conversationId -> userIds typing
-  // social
-  toggleLike: (postId: string) => void;
-  toggleSave: (postId: string) => void;
-  sharePost: (postId: string) => void;
-  addComment: (postId: string, text: string) => void;
-  createPost: (text: string, media?: Post['media']) => void;
-  toggleFollow: (userId: string) => void;
-  // stories
-  viewStory: (storyId: string, reaction?: string) => void;
-  // messaging
-  sendMessage: (
-    conversationId: string,
-    kind: MessageKind,
-    text: string,
-    meta?: Message['meta'],
-    replyTo?: string
-  ) => Promise<void>;
-  reactToMessage: (messageId: string, emoji: string) => void;
-  editMessage: (messageId: string, text: string) => Promise<void>;
-  deleteMessage: (messageId: string) => void;
-  markConversationRead: (conversationId: string) => void;
-  startTyping: (conversationId: string) => void;
-  createConversation: (memberIds: string[], name?: string) => Promise<string>;
-  decryptedFor: (conversationId: string) => Message[];
-  // notifications
-  markAllNotificationsRead: () => void;
-  userById: (id: string) => User;
-}
-
-const AppContext = createContext<AppContextValue | null>(null);
-
-export function useApp() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within AppProvider');
-  return ctx;
-}
-
-let mid = 0;
-const uid = (p: string) => `${p}_${Date.now()}_${mid++}`;
-
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>({
     users: DEMO_USERS,
     posts: DEMO_POSTS,
@@ -592,6 +540,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     decryptedFor,
     markAllNotificationsRead,
     userById,
+    signOut: async () => {},
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

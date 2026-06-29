@@ -105,7 +105,7 @@ export function MessageBubble({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={message.plaintext} alt="" className="max-h-72 rounded-lg" />
           ) : message.kind === 'file' ? (
-            <a className="flex items-center gap-2 underline" href="#">
+            <a className="flex items-center gap-2 underline" href={message.plaintext || '#'} target="_blank" rel="noreferrer">
               📎 {message.meta?.fileName ?? 'file'}
             </a>
           ) : (

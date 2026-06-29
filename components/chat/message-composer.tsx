@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ImagePlus, Mic, Paperclip, Send, Smile, Trash2, X } from 'lucide-react';
+import { ImagePlus, Loader2, Mic, Paperclip, Send, Smile, Trash2, X } from 'lucide-react';
 import { useApp } from '@/lib/store';
+import { uploadPublic } from '@/lib/supabase/storage';
 import type { Message } from '@/lib/types';
 
 const EMOJIS = ['😀','😂','🥰','😎','🤔','😮','😢','🔥','💜','👍','🙏','✨','🎉','💯','👀','🔐','📷','🎤'];
-const SAMPLE_IMG = 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=600&q=80';
 
 export function MessageComposer({
   conversationId,
@@ -25,6 +25,8 @@ export function MessageComposer({
   const [seconds, setSeconds] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval>>();
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => () => clearInterval(timer.current), []);
 
@@ -51,16 +53,28 @@ export function MessageComposer({
     setSeconds(0);
   }
 
-  function attachImage() {
-    sendMessage(conversationId, 'image', SAMPLE_IMG, undefined, replyTo?.id);
+  // Upload the file to public storage and send the (encrypted) URL so the other
+  // member can actually load it. Falls back to a local object URL in demo mode.
+  async function attachImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setUploading(true);
+    const url = (await uploadPublic('posts', f)) ?? URL.createObjectURL(f);
+    setUploading(false);
+    sendMessage(conversationId, 'image', url, { mime: f.type }, replyTo?.id);
     onClearReply();
   }
 
-  function attachFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function attachFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    sendMessage(conversationId, 'file', f?.name ?? 'document.pdf', { fileName: f?.name ?? 'document.pdf' }, replyTo?.id);
-    onClearReply();
     e.target.value = '';
+    if (!f) return;
+    setUploading(true);
+    const url = (await uploadPublic('posts', f)) ?? URL.createObjectURL(f);
+    setUploading(false);
+    sendMessage(conversationId, 'file', url, { fileName: f.name, mime: f.type }, replyTo?.id);
+    onClearReply();
   }
 
   return (
@@ -124,12 +138,13 @@ export function MessageComposer({
           <button onClick={() => setEmoji((s) => !s)} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white">
             <Smile className="h-5 w-5" />
           </button>
-          <button onClick={attachImage} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white">
-            <ImagePlus className="h-5 w-5" />
+          <button onClick={() => imgRef.current?.click()} disabled={uploading} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-50">
+            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
           </button>
-          <button onClick={() => fileRef.current?.click()} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white">
+          <button onClick={() => fileRef.current?.click()} disabled={uploading} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-50">
             <Paperclip className="h-5 w-5" />
           </button>
+          <input ref={imgRef} type="file" accept="image/*" hidden onChange={attachImage} />
           <input ref={fileRef} type="file" hidden onChange={attachFile} />
 
           <textarea

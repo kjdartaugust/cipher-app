@@ -31,7 +31,9 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const keypair = useRef<KeyPair | null>(null);
   const sealed = useRef<Record<string, string>>({});
   const convKey = useRef<Record<string, string>>({});
+  const convIdsRef = useRef<string[]>([]);
   const typingTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const convReloadTimer = useRef<ReturnType<typeof setTimeout>>();
 
   if (!sb.current) sb.current = createClient();
 
@@ -52,6 +54,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         keypair.current = pair;
         const data = await loadEverything(supabase!, userId);
         sealed.current = data.sealedKeys;
+        convIdsRef.current = data.conversations.map((c) => c.id);
         const messages = await decryptAll(data.messages);
         if (cancelled) return;
         setState({
@@ -62,7 +65,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           messages,
           notifications: data.notifications,
         });
-        subscribe(supabase!, data.conversations.map((c) => c.id));
+        subscribe(supabase!);
       } catch (err) {
         // Don't trap the user on "Generating your keys…" — surface and continue.
         console.error('[Cipher] bootstrap failed:', err);
@@ -156,6 +159,28 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     }, 350);
   }, []);
 
+  // Reload conversations + messages (e.g. when added to a new chat). Merges so
+  // already-decrypted plaintext and optimistic messages are preserved.
+  const refreshConversations = useCallback(() => {
+    clearTimeout(convReloadTimer.current);
+    convReloadTimer.current = setTimeout(async () => {
+      const supabase = sb.current;
+      if (!supabase || !myId.current) return;
+      const data = await loadEverything(supabase, myId.current);
+      sealed.current = data.sealedKeys;
+      convIdsRef.current = data.conversations.map((c) => c.id);
+      setState((s) => {
+        const seen = new Map(s.messages.map((m) => [m.id, m]));
+        const merged = data.messages.map((m) => {
+          const old = seen.get(m.id);
+          return old?.plaintext !== undefined ? { ...m, plaintext: old.plaintext } : m;
+        });
+        for (const m of s.messages) if (!merged.some((x) => x.id === m.id)) merged.push(m);
+        return { ...s, conversations: data.conversations, messages: merged };
+      });
+    }, 250);
+  }, []);
+
   const refetchMessageMeta = useCallback(async (messageId: string) => {
     const supabase = sb.current!;
     const [{ data: r }, { data: rc }] = await Promise.all([
@@ -176,12 +201,17 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  function subscribe(supabase: SupabaseClient, convIds: string[]) {
+  function subscribe(supabase: SupabaseClient) {
     const ch = supabase.channel('cipher-rt');
 
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (p: any) => {
       const row = p.new ?? p.old;
-      if (!row || !convIds.includes(row.conversation_id)) return;
+      if (!row) return;
+      // A message in a conversation we don't know about yet = we were just added.
+      if (!convIdsRef.current.includes(row.conversation_id)) {
+        refreshConversations();
+        return;
+      }
       if (p.eventType === 'INSERT') {
         setState((s) => {
           if (s.messages.some((m) => m.id === row.id)) return s;
@@ -209,6 +239,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       const id = (p.new ?? p.old)?.message_id;
       if (id) refetchMessageMeta(id);
     });
+    // New conversation membership for me → load the new chat live.
+    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversation_members', filter: `user_id=eq.${myId.current}` }, () => refreshConversations());
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${myId.current}` }, () => reloadSocial());
     for (const t of ['posts', 'likes', 'saves', 'comments', 'follows', 'profiles', 'stories', 'story_views']) {
       ch.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => reloadSocial());
@@ -369,20 +401,31 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     const existing = state.conversations.find((c) => !name && c.memberIds.length === ids.length && ids.every((i) => c.memberIds.includes(i)));
     if (existing) return existing.id;
     const isGroup = ids.length > 2 || !!name;
-    const { data: conv } = await db.insertConversation(supa(), { is_group: isGroup, name });
-    const { data: keys } = await db.publicKeys(supa(), ids);
+    const convId = crypto.randomUUID();
+
+    // Fetch every member's public key up front so we can seal the conversation key.
+    const { data: keys, error: keyErr } = await db.publicKeys(supa(), ids);
+    if (keyErr) throw new Error(keyErr.message);
+    const missing = ids.filter((id) => !(keys ?? []).find((k: any) => k.id === id)?.public_key);
+    if (missing.length) throw new Error('A selected member has not set up encryption keys yet.');
+
     const ck = await generateConversationKey();
-    const rows = [] as { conversation_id: string; user_id: string; sealed_key: string }[];
+    const rows: { conversation_id: string; user_id: string; sealed_key: string }[] = [];
     for (const id of ids) {
-      const pk = (keys ?? []).find((k: any) => k.id === id)?.public_key;
-      if (!pk) continue;
-      rows.push({ conversation_id: conv.id, user_id: id, sealed_key: await sealKeyForMember(ck, pk) });
+      const pk = (keys ?? []).find((k: any) => k.id === id)!.public_key;
+      rows.push({ conversation_id: convId, user_id: id, sealed_key: await sealKeyForMember(ck, pk) });
     }
-    await db.insertMembers(supa(), rows);
-    sealed.current[conv.id] = rows.find((r) => r.user_id === mine())!.sealed_key;
-    convKey.current[conv.id] = ck;
-    setState((s) => ({ ...s, conversations: [{ id: conv.id, isGroup, name, memberIds: ids, createdAt: Date.now(), lastMessageAt: Date.now() }, ...s.conversations] }));
-    return conv.id;
+
+    const { error: convErr } = await db.insertConversation(supa(), { id: convId, is_group: isGroup, name });
+    if (convErr) throw new Error(convErr.message);
+    const { error: memErr } = await db.insertMembers(supa(), rows);
+    if (memErr) throw new Error(memErr.message);
+
+    sealed.current[convId] = rows.find((r) => r.user_id === mine())!.sealed_key;
+    convKey.current[convId] = ck;
+    convIdsRef.current = [convId, ...convIdsRef.current];
+    setState((s) => ({ ...s, conversations: [{ id: convId, isGroup, name, memberIds: ids, createdAt: Date.now(), lastMessageAt: Date.now() }, ...s.conversations] }));
+    return convId;
   }, [state.conversations]);
 
   const markAllNotificationsRead = useCallback(() => {

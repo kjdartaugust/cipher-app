@@ -202,8 +202,10 @@ export const db = {
   viewStory: (s: DB, storyId: string, viewerId: string, reaction?: string) =>
     s.from('story_views').upsert({ story_id: storyId, viewer_id: viewerId, reaction: reaction ?? null, viewed_at: new Date().toISOString() }),
 
-  insertConversation: (s: DB, row: { is_group: boolean; name?: string }) =>
-    s.from('conversations').insert({ is_group: row.is_group, name: row.name ?? null }).select().single(),
+  // Note: no .select() here — the creator is not a member yet, so the RLS
+  // SELECT policy would hide the returned row. We supply the id ourselves.
+  insertConversation: (s: DB, row: { id: string; is_group: boolean; name?: string }) =>
+    s.from('conversations').insert({ id: row.id, is_group: row.is_group, name: row.name ?? null }),
   insertMembers: (s: DB, rows: { conversation_id: string; user_id: string; sealed_key: string }[]) =>
     s.from('conversation_members').insert(rows),
 

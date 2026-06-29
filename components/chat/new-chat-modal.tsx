@@ -13,6 +13,8 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const [groupName, setGroupName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const candidates = users.filter(
     (u) => u.id !== me.id && u.name.toLowerCase().includes(query.toLowerCase())
@@ -23,18 +25,27 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   async function start() {
-    if (selected.length === 0) return;
-    const isGroup = selected.length > 1;
-    const id = await createConversation(selected, isGroup ? groupName || 'New group' : undefined);
-    reset();
-    onClose();
-    router.push(`/messages/${id}`);
+    if (selected.length === 0 || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const isGroup = selected.length > 1;
+      const id = await createConversation(selected, isGroup ? groupName || 'New group' : undefined);
+      reset();
+      onClose();
+      router.push(`/messages/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start the chat.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   function reset() {
     setSelected([]);
     setQuery('');
     setGroupName('');
+    setError(null);
   }
 
   return (
@@ -89,9 +100,11 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
               })}
             </div>
 
-            <button onClick={start} disabled={selected.length === 0} className="btn-primary mt-4 w-full">
+            {error && <p className="mt-3 rounded-lg bg-rose-500/15 px-3 py-2 text-xs text-rose-300">{error}</p>}
+
+            <button onClick={start} disabled={selected.length === 0 || busy} className="btn-primary mt-4 w-full">
               {selected.length > 1 ? <Users className="h-4 w-4" /> : null}
-              {selected.length > 1 ? `Start group (${selected.length})` : 'Start chat'}
+              {busy ? 'Starting…' : selected.length > 1 ? `Start group (${selected.length})` : 'Start chat'}
             </button>
           </motion.div>
         </motion.div>

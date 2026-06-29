@@ -52,6 +52,19 @@ body {
   .card {
     @apply rounded-2xl glass p-4;
   }
+  /* editorial system */
+  .headline {
+    @apply font-display font-semibold tracking-tight;
+  }
+  .kicker {
+    @apply font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40;
+  }
+  .rule {
+    @apply border-white/10;
+  }
+  .editorial-link {
+    @apply underline decoration-cipher-500/50 decoration-1 underline-offset-4 transition hover:decoration-cipher-400;
+  }
 }
 
 .shimmer {

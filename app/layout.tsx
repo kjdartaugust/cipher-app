@@ -1,9 +1,15 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Fraunces } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700', '900'],
+  style: ['normal', 'italic'],
+});
 
 export const metadata: Metadata = {
   title: 'Cipher — Private. Encrypted. Social.',
@@ -27,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className="min-h-screen bg-ink font-sans text-soft antialiased">
         <div className="pointer-events-none fixed inset-0 -z-10 bg-cipher-radial opacity-60" />
         <Providers>{children}</Providers>

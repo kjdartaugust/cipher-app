@@ -26,7 +26,7 @@ export function Logo({
         <Lock className="h-1/2 w-1/2 text-white" strokeWidth={2.5} />
       </span>
       {showText && (
-        <span className={cn('font-bold tracking-tight', text)}>
+        <span className={cn('headline tracking-tight', text)}>
           Cipher
         </span>
       )}

@@ -36,26 +36,26 @@ export default function FeedPage() {
 
   return (
     <div className="flex">
-      <div className="mx-auto w-full max-w-[600px] border-x border-white/5">
+      <div className="mx-auto w-full max-w-[640px] border-x border-white/10">
         <PageHeader
-          title="Home"
+          kicker="The Cipher"
+          title="Today"
           action={
             <button onClick={compose} className="rounded-full p-2 text-cipher-300 hover:bg-white/10 lg:hidden">
               <PenSquare className="h-5 w-5" />
             </button>
           }
         >
-          <div className="flex">
+          <div className="flex items-center gap-6 px-5 pb-3 sm:px-8">
             {(['for-you', 'following'] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`relative flex-1 py-3 text-sm font-medium transition ${
-                  tab === t ? 'text-white' : 'text-white/45 hover:text-white/70'
+                className={`kicker !text-xs transition ${
+                  tab === t ? '!text-cipher-300' : 'hover:!text-white/70'
                 }`}
               >
                 {t === 'for-you' ? 'For you' : 'Following'}
-                {tab === t && <span className="absolute inset-x-0 bottom-0 mx-auto h-0.5 w-12 rounded-full bg-cipher-gradient" />}
               </button>
             ))}
           </div>
@@ -63,7 +63,7 @@ export default function FeedPage() {
 
         <StoriesBar />
 
-        <div className="space-y-4 p-4">
+        <div className="px-5 sm:px-8">
           {sorted.map((p) => (
             <PostCard key={p.id} post={p} trending={tab === 'for-you' && (p.trendingScore ?? 0) >= 90} />
           ))}

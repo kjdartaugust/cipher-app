@@ -31,26 +31,26 @@ export function Sidebar({ onCompose }: { onCompose: () => void }) {
               key={item.href}
               href={item.href}
               className={cn(
-                'group relative flex items-center gap-4 rounded-xl px-4 py-3 text-[15px] font-medium transition',
-                active ? 'text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'
+                'group relative flex items-center gap-4 py-2.5 pl-5 text-[15px] transition',
+                active ? 'text-white' : 'text-white/50 hover:text-white'
               )}
             >
               {active && (
                 <motion.span
                   layoutId="nav-active"
-                  className="absolute inset-0 -z-10 rounded-xl bg-white/[0.07] ring-1 ring-white/10"
+                  className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-cipher-gradient"
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 />
               )}
               <span className="relative">
-                <item.icon className={cn('h-6 w-6', active && 'text-cipher-300')} strokeWidth={active ? 2.4 : 2} />
+                <item.icon className={cn('h-[22px] w-[22px]', active && 'text-cipher-300')} strokeWidth={active ? 2.2 : 1.8} />
                 {badge > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-cipher-600 px-1 text-[10px] font-bold text-white">
                     {badge > 9 ? '9+' : badge}
                   </span>
                 )}
               </span>
-              {item.label}
+              <span className={cn('font-display text-base', active ? 'font-semibold' : 'font-normal')}>{item.label}</span>
             </Link>
           );
         })}

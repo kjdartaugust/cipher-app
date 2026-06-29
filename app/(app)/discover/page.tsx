@@ -31,7 +31,7 @@ export default function DiscoverPage() {
 
   return (
     <div className="mx-auto max-w-2xl border-x border-white/5">
-      <PageHeader title="Discover" />
+      <PageHeader kicker="Explore" title="Discover" />
 
       <div className="p-4">
         <div className="relative">

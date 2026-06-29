@@ -33,6 +33,7 @@ export default function NotificationsPage() {
   return (
     <div className="mx-auto max-w-2xl border-x border-white/5">
       <PageHeader
+        kicker="Activity"
         title="Notifications"
         action={
           unread > 0 ? (

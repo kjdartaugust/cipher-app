@@ -37,16 +37,30 @@ export function ProfileView({ user }: { user: User }) {
   return (
     <div className="mx-auto max-w-2xl border-x border-white/5">
       {/* banner */}
-      <div className="relative h-36 bg-cipher-gradient sm:h-44">
-        <div className="absolute inset-0 bg-cipher-radial opacity-60" />
-      </div>
+      <div className="h-1 bg-cipher-gradient" />
 
-      <div className="px-4 pb-4 sm:px-6">
-        <div className="-mt-12 flex items-end justify-between">
-          <div className="rounded-full border-4 border-ink">
-            <Avatar src={user.avatar} alt={user.name} size={96} online={user.online} />
+      <div className="px-5 pb-4 pt-7 sm:px-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="headline text-4xl leading-none">{user.name}</h1>
+              {user.verified && <VerifiedBadge />}
+            </div>
+            <p className="kicker mt-2">@{user.username}</p>
           </div>
-          <div className="mb-2 flex gap-2">
+          <Avatar src={user.avatar} alt={user.name} size={84} online={user.online} className="shrink-0" />
+        </div>
+
+        <div className="mt-4">
+          <p className="max-w-prose font-display text-lg italic leading-snug text-white/80">{user.bio}</p>
+
+          <div className="mt-5 flex gap-8 border-y border-white/10 py-3">
+            <Stat label="Posts" value={userPosts.length} />
+            <Stat label="Followers" value={compactNumber(user.followers.length)} />
+            <Stat label="Following" value={compactNumber(user.following.length)} />
+          </div>
+
+          <div className="mt-4 flex gap-2">
             {isMe ? (
               <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
             ) : (
@@ -60,21 +74,6 @@ export function ProfileView({ user }: { user: User }) {
                 </button>
               </>
             )}
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <div className="flex items-center gap-1.5">
-            <h1 className="text-xl font-bold">{user.name}</h1>
-            {user.verified && <VerifiedBadge />}
-          </div>
-          <p className="text-sm text-white/45">@{user.username}</p>
-          <p className="mt-2 text-[15px] text-white/80">{user.bio}</p>
-
-          <div className="mt-3 flex gap-5 text-sm">
-            <span><b>{userPosts.length}</b> <span className="text-white/45">posts</span></span>
-            <span><b>{compactNumber(user.followers.length)}</b> <span className="text-white/45">followers</span></span>
-            <span><b>{compactNumber(user.following.length)}</b> <span className="text-white/45">following</span></span>
           </div>
 
           {!isMe && mutuals.length > 0 && (
@@ -108,25 +107,24 @@ export function ProfileView({ user }: { user: User }) {
       </div>
 
       {/* tabs */}
-      <div className="flex border-y border-white/5">
+      <div className="flex gap-6 border-y border-white/10 px-5 sm:px-8">
         <Tab active={tab === 'posts'} onClick={() => setTab('posts')} icon={Grid3x3} label="Posts" />
         {isMe && <Tab active={tab === 'saved'} onClick={() => setTab('saved')} icon={Bookmark} label="Saved" />}
       </div>
 
       {/* grid */}
-      <div className="grid grid-cols-3 gap-0.5 p-0.5">
+      <div className="grid grid-cols-2 gap-2 p-5 sm:px-8">
         {grid.filter((p) => p.media?.[0]).map((p) => (
           <motion.div
             key={p.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="group relative aspect-square overflow-hidden bg-white/5"
+            className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-white/5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.media![0].url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-            <div className="absolute inset-0 hidden items-center justify-center gap-4 bg-black/40 text-sm font-semibold text-white group-hover:flex">
-              <span>♥ {p.likes.length}</span>
-              <span>💬 {p.comments.length}</span>
+            <div className="absolute inset-0 hidden items-end bg-gradient-to-t from-black/70 to-transparent p-3 text-sm font-semibold text-white group-hover:flex">
+              <span className="flex gap-4"><span>♥ {p.likes.length}</span><span>💬 {p.comments.length}</span></span>
             </div>
           </motion.div>
         ))}
@@ -138,6 +136,15 @@ export function ProfileView({ user }: { user: User }) {
       )}
 
       {isMe && <EditProfileModal open={editing} onClose={() => setEditing(false)} />}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div>
+      <p className="headline text-2xl leading-none">{value}</p>
+      <p className="kicker mt-1">{label}</p>
     </div>
   );
 }
@@ -156,12 +163,12 @@ function Tab({
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition ${
+      className={`relative flex items-center gap-2 py-3 transition ${
         active ? 'text-white' : 'text-white/40 hover:text-white/70'
       }`}
     >
-      <Icon className="h-4 w-4" /> {label}
-      {active && <span className="absolute inset-x-0 bottom-0 mx-auto h-0.5 w-16 rounded-full bg-cipher-gradient" />}
+      <Icon className="h-4 w-4" /> <span className="kicker !text-xs">{label}</span>
+      {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-cipher-gradient" />}
     </button>
   );
 }

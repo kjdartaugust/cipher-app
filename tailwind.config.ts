@@ -25,6 +25,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Georgia', 'serif'],
       },
       backgroundImage: {
         'cipher-gradient': 'linear-gradient(135deg, #7C3AED 0%, #a78bfa 100%)',

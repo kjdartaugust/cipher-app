@@ -38,8 +38,8 @@ export function Sidebar({ onCompose }: { onCompose: () => void }) {
               {active && (
                 <motion.span
                   layoutId="nav-active"
-                  className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-cipher-gradient"
-                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-blue"
+                  transition={{ duration: 0.15 }}
                 />
               )}
               <span className="relative">

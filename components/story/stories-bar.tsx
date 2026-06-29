@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
 import { StoryViewer } from './story-viewer';
 import { useApp } from '@/lib/store';
 
@@ -27,47 +28,42 @@ export function StoriesBar() {
 
   return (
     <>
-      <div className="border-b border-white/10 px-5 py-5 sm:px-8">
-        <p className="kicker mb-3">Stories</p>
-        <div className="no-scrollbar flex gap-3 overflow-x-auto">
-          {/* your story / add */}
-          <button
-            onClick={() => {
-              const idx = flat.findIndex((s) => s.authorId === me.id);
-              if (idx >= 0) setActiveIndex(idx);
-            }}
-            className="group relative h-24 w-[68px] shrink-0 overflow-hidden rounded-xl border border-white/15"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={myStory?.items[0].media.url ?? me.avatar} alt="Your story" className="h-full w-full object-cover opacity-80" />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-            <span className="absolute left-1/2 top-1.5 grid h-6 w-6 -translate-x-1/2 place-items-center rounded-full bg-cipher-600 ring-2 ring-ink">
-              <Plus className="h-3.5 w-3.5 text-white" />
+      <div className="no-scrollbar flex gap-5 overflow-x-auto border-b border-white/10 px-5 py-5 sm:px-8">
+        {/* your story / add */}
+        <button
+          onClick={() => {
+            const idx = flat.findIndex((s) => s.authorId === me.id);
+            if (idx >= 0) setActiveIndex(idx);
+          }}
+          className="flex w-16 shrink-0 flex-col items-center gap-2"
+        >
+          <span className="relative">
+            <Avatar src={me.avatar} alt="Your story" size={64} ring={!!myStory} />
+            <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-black bg-blue">
+              <Plus className="h-3 w-3 text-white" strokeWidth={2.5} />
             </span>
-            <span className="absolute inset-x-1 bottom-1 truncate text-[10px] font-medium text-white">You</span>
-          </button>
+          </span>
+          <span className="truncate text-xs text-white/55">You</span>
+        </button>
 
-          {grouped
-            .filter((g) => g.author.id !== me.id)
-            .map((g) => {
-              const startIdx = flat.findIndex((s) => s.id === g.items[0].id);
-              const seen = g.items.every((s) => s.viewers.some((v) => v.userId === me.id));
-              return (
-                <button
-                  key={g.author.id}
-                  onClick={() => setActiveIndex(startIdx)}
-                  className={`relative h-24 w-[68px] shrink-0 overflow-hidden rounded-xl border transition ${
-                    seen ? 'border-white/10 opacity-60' : 'border-cipher-500'
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={g.items[0].media.url} alt={g.author.name} className="h-full w-full object-cover" />
-                  <span className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                  <span className="absolute inset-x-1 bottom-1 truncate text-[10px] font-medium text-white">{g.author.username}</span>
-                </button>
-              );
-            })}
-        </div>
+        {grouped
+          .filter((g) => g.author.id !== me.id)
+          .map((g) => {
+            const startIdx = flat.findIndex((s) => s.id === g.items[0].id);
+            const seen = g.items.every((s) => s.viewers.some((v) => v.userId === me.id));
+            return (
+              <button
+                key={g.author.id}
+                onClick={() => setActiveIndex(startIdx)}
+                className="flex w-16 shrink-0 flex-col items-center gap-2"
+              >
+                <span className={seen ? 'opacity-50' : ''}>
+                  <Avatar src={g.author.avatar} alt={g.author.name} size={64} ring={!seen} />
+                </span>
+                <span className="truncate text-xs text-white/55">{g.author.username}</span>
+              </button>
+            );
+          })}
       </div>
 
       {activeIndex !== null && (

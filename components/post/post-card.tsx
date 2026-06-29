@@ -63,9 +63,9 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
         </div>
       </div>
 
-      {/* body copy as editorial lede */}
+      {/* body copy */}
       {post.text && (
-        <p className="mb-4 max-w-2xl font-display text-[22px] leading-snug tracking-tight text-soft/95 sm:text-[26px]">
+        <p className="mb-4 max-w-2xl text-[17px] leading-relaxed text-white/90">
           {post.text}
         </p>
       )}
@@ -94,25 +94,25 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
         </figure>
       )}
 
-      {/* editorial action line */}
-      <div className="flex items-center gap-6 text-sm text-white/55">
-        <button onClick={like} className={cn('group flex items-center gap-1.5 transition hover:text-rose-400', liked && 'text-rose-500')}>
-          <Heart className={cn('h-[18px] w-[18px]', liked && 'fill-rose-500')} />
+      {/* action line — razor-thin line icons */}
+      <div className="flex items-center gap-7 text-sm text-white/50">
+        <button onClick={like} className={cn('flex items-center gap-2 transition hover:text-white', liked && 'text-blue')}>
+          <Heart className={cn('h-5 w-5', liked && 'fill-blue text-blue')} strokeWidth={1.5} />
           <span className="tabular-nums">{compactNumber(post.likes.length)}</span>
         </button>
-        <button onClick={() => setShowComments((s) => !s)} className={cn('flex items-center gap-1.5 transition hover:text-soft', showComments && 'text-soft')}>
-          <MessageCircle className="h-[18px] w-[18px]" />
+        <button onClick={() => setShowComments((s) => !s)} className={cn('flex items-center gap-2 transition hover:text-white', showComments && 'text-white')}>
+          <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
           <span className="tabular-nums">{post.comments.length}</span>
         </button>
-        <button onClick={() => sharePost(post.id)} className="flex items-center gap-1.5 transition hover:text-soft">
-          <Share2 className="h-[18px] w-[18px]" />
+        <button onClick={() => sharePost(post.id)} className="flex items-center gap-2 transition hover:text-white">
+          <Share2 className="h-5 w-5" strokeWidth={1.5} />
           <span className="tabular-nums">{compactNumber(post.shares)}</span>
         </button>
         <button
           onClick={() => toggleSave(post.id)}
-          className={cn('ml-auto transition hover:text-cipher-300', saved && 'text-cipher-400')}
+          className={cn('ml-auto transition hover:text-white', saved && 'text-blue')}
         >
-          <Bookmark className={cn('h-[18px] w-[18px]', saved && 'fill-cipher-400')} />
+          <Bookmark className={cn('h-5 w-5', saved && 'fill-blue text-blue')} strokeWidth={1.5} />
         </button>
       </div>
 

@@ -52,7 +52,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   return (
     <div className="flex h-screen flex-col">
       {/* header */}
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/5 bg-ink/70 px-4 py-3 backdrop-blur-xl">
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-black px-4 py-3">
         <Link href="/messages" className="rounded-full p-1.5 hover:bg-white/10 lg:hidden">
           <ArrowLeft className="h-5 w-5" />
         </Link>

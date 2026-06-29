@@ -19,11 +19,11 @@ export function Logo({
     <Link href={href} className="group inline-flex items-center gap-2.5">
       <span
         className={cn(
-          'grid place-items-center rounded-xl bg-cipher-gradient shadow-lg shadow-cipher-600/30 transition group-hover:shadow-cipher-600/50',
+          'grid place-items-center rounded-[22%] bg-blue transition',
           box
         )}
       >
-        <Lock className="h-1/2 w-1/2 text-white" strokeWidth={2.5} />
+        <Lock className="h-1/2 w-1/2 text-white" strokeWidth={2.25} />
       </span>
       {showText && (
         <span className={cn('headline tracking-tight', text)}>

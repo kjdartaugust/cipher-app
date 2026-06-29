@@ -78,7 +78,7 @@ export function MessageComposer({
   }
 
   return (
-    <div className="border-t border-white/5 bg-ink/80 backdrop-blur-xl">
+    <div className="border-t border-white/10 bg-black">
       <AnimatePresence>
         {replyTo && (
           <motion.div

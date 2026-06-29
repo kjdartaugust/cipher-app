@@ -109,8 +109,6 @@ export default function Landing() {
           </motion.p>
         </motion.div>
 
-        {/* glow orbs */}
-        <div className="pointer-events-none absolute left-1/2 top-40 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-cipher-600/30 blur-[120px]" />
       </section>
 
       {/* features */}

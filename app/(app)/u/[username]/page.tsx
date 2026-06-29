@@ -18,7 +18,7 @@ export default function UserProfilePage() {
 
   return (
     <div>
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/10 bg-ink/80 px-5 py-3 backdrop-blur-xl sm:px-8">
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/10 bg-black px-5 py-3 sm:px-8">
         <Link href="/discover" className="rounded-full p-1.5 hover:bg-white/10">
           <ArrowLeft className="h-5 w-5" />
         </Link>

@@ -152,7 +152,7 @@ export function StoryViewer({
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-2xl bg-ink/95 p-4 backdrop-blur-xl"
+                className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-2xl border-t border-white/10 bg-surface p-4"
               >
                 <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
                 <p className="mb-3 text-sm font-semibold">Viewed by {story.viewers.length}</p>

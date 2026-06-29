@@ -128,7 +128,6 @@ export default function AuthPage() {
 
   return (
     <main className="relative grid min-h-screen place-items-center px-6 py-12">
-      <div className="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-cipher-600/25 blur-[130px]" />
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <Logo size="lg" showText={false} />

@@ -54,7 +54,7 @@ export function ProfileView({ user }: { user: User }) {
         </div>
 
         <div className="mt-4">
-          <p className="max-w-prose font-display text-lg italic leading-snug text-white/80">{user.bio}</p>
+          <p className="max-w-prose text-[15px] leading-relaxed text-white/80">{user.bio}</p>
 
           <div className="mt-5 flex gap-8 border-y border-white/10 py-3">
             <Stat label="Posts" value={userPosts.length} />

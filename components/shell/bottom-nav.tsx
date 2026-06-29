@@ -12,7 +12,7 @@ export function BottomNav() {
   const { badges } = useBadges();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/80 backdrop-blur-xl lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black lg:hidden">
       <div className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href);
@@ -25,8 +25,8 @@ export function BottomNav() {
             >
               <span className="relative">
                 <item.icon
-                  className={cn('h-6 w-6 transition', active ? 'text-cipher-400' : 'text-white/50')}
-                  strokeWidth={active ? 2.5 : 2}
+                  className={cn('h-[26px] w-[26px] transition', active ? 'text-blue' : 'text-white/45')}
+                  strokeWidth={active ? 2 : 1.6}
                 />
                 {badge > 0 && (
                   <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-cipher-600 px-1 text-[10px] font-bold text-white">
@@ -37,8 +37,8 @@ export function BottomNav() {
               {active && (
                 <motion.span
                   layoutId="bottom-active"
-                  className="h-1 w-1 rounded-full bg-cipher-400"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  className="h-1 w-1 rounded-full bg-blue"
+                  transition={{ duration: 0.15 }}
                 />
               )}
             </Link>

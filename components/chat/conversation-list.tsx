@@ -20,7 +20,7 @@ export function ConversationList() {
 
   return (
     <div className="flex h-screen flex-col border-r border-white/5">
-      <div className="sticky top-0 z-10 border-b border-white/5 bg-ink/70 p-4 backdrop-blur-xl">
+      <div className="sticky top-0 z-10 border-b border-white/10 bg-black p-4">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-xl font-bold">Messages</h1>
           <button onClick={() => setNewChat(true)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Sidebar } from './sidebar';
 import { BottomNav } from './bottom-nav';
 import { ComposeModal } from '@/components/post/compose-modal';
+import { UnlockModal } from '@/components/unlock-modal';
 import { Logo } from '@/components/ui/logo';
 import { useApp } from '@/lib/store';
 
@@ -12,7 +13,7 @@ const ComposeCtx = createContext<() => void>(() => {});
 export const useCompose = () => useContext(ComposeCtx);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { ready } = useApp();
+  const { ready, needsUnlock } = useApp();
   const [composeOpen, setComposeOpen] = useState(false);
 
   if (!ready) {
@@ -38,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <BottomNav />
       <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
+      {needsUnlock && <UnlockModal />}
     </ComposeCtx.Provider>
   );
 }

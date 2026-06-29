@@ -74,8 +74,8 @@ export default function AuthPage() {
           setLoading(false);
           return;
         }
-        router.push('/feed');
-        router.refresh();
+        // Hard navigation so the data provider re-boots with the freshly stored key.
+        window.location.assign('/feed');
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: form.email,
@@ -83,8 +83,7 @@ export default function AuthPage() {
         });
         if (error) throw error;
         if (data.user) await recoverKeys(supabase, data.user.id, form.password);
-        router.push('/feed');
-        router.refresh();
+        window.location.assign('/feed');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');

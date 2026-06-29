@@ -24,6 +24,8 @@ export interface AppContextValue extends AppState {
   me: User;
   ready: boolean;
   typing: Record<string, string[]>; // conversationId -> userIds typing
+  needsUnlock: boolean; // true when this device's key can't decrypt — prompt for password
+  unlock: (password: string) => Promise<boolean>;
   // social
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;

@@ -523,6 +523,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     me,
     ready,
     typing,
+    needsUnlock: false,
+    unlock: async () => true,
     toggleLike,
     toggleSave,
     sharePost,

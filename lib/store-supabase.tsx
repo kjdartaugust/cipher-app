@@ -9,10 +9,14 @@ import {
   decryptMessage,
   encryptMessage,
   generateConversationKey,
+  generateKeyPair,
   openSealedKey,
+  randomSalt,
   sealKeyForMember,
+  unwrapPrivateKey,
+  wrapPrivateKey,
 } from './crypto';
-import { ensureKeyPair } from './keys';
+import { loadKeyPair, storeKeyPair } from './keys';
 import type { KeyPair } from './crypto';
 import type { Message, MessageKind, Post, User } from './types';
 import { useApp } from './app-context';
@@ -24,6 +28,7 @@ const EMPTY: AppState = { users: [], posts: [], stories: [], conversations: [], 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(EMPTY);
   const [ready, setReady] = useState(false);
+  const [needsUnlock, setNeedsUnlock] = useState(false);
   const [typing, setTyping] = useState<Record<string, string[]>>({});
 
   const sb = useRef<SupabaseClient | null>(null);
@@ -50,15 +55,21 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       if (cancelled || myId.current === userId) return;
       myId.current = userId;
       try {
-        const { pair } = await ensureKeyPair(userId);
-        keypair.current = pair;
+        // Use whatever key this device already holds (NEVER generate here — the
+        // login page is the single owner of key creation/recovery). If it's
+        // missing or doesn't match the published key, prompt to unlock.
+        keypair.current = loadKeyPair(userId);
         // Authorize the realtime socket so RLS-protected change events reach us.
         const { data: sess } = await supabase!.auth.getSession();
         if (sess.session?.access_token) supabase!.realtime.setAuth(sess.session.access_token);
         const data = await loadEverything(supabase!, userId);
         sealed.current = data.sealedKeys;
         convIdsRef.current = data.conversations.map((c) => c.id);
-        const messages = await decryptAll(data.messages);
+        const myPub = data.users.find((u) => u.id === userId)?.publicKey;
+        const mismatch = !keypair.current || (!!myPub && keypair.current.publicKey !== myPub);
+        if (cancelled) return;
+        setNeedsUnlock(mismatch);
+        const messages = mismatch ? data.messages : await decryptAll(data.messages);
         if (cancelled) return;
         setState({
           users: data.users,
@@ -455,17 +466,57 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     if (error) throw new Error(error.message);
   }, []);
 
+  // Recover this device's key pair from the password-wrapped key in the DB, then
+  // re-decrypt everything. Returns false if the password is wrong.
+  const unlock = useCallback(async (password: string): Promise<boolean> => {
+    const supabase = supa();
+    const userId = mine();
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('public_key, enc_private_key, key_salt')
+      .eq('id', userId)
+      .single();
+    if (!prof) return false;
+
+    let kp: KeyPair | null = null;
+    if (prof.enc_private_key && prof.key_salt) {
+      try {
+        const privateKey = await unwrapPrivateKey(prof.enc_private_key, password, prof.key_salt);
+        kp = { publicKey: prof.public_key, privateKey };
+      } catch {
+        return false;
+      }
+    } else {
+      // No wrapped key yet: establish one for this account from this device.
+      const local = loadKeyPair(userId);
+      kp = local ?? (await generateKeyPair());
+      const salt = await randomSalt();
+      const encPrivate = await wrapPrivateKey(kp.privateKey, password, salt);
+      await supabase.from('profiles').update({ public_key: kp.publicKey, enc_private_key: encPrivate, key_salt: salt }).eq('id', userId);
+    }
+    if (!kp) return false;
+
+    storeKeyPair(userId, kp);
+    keypair.current = kp;
+    convKey.current = {};
+    setNeedsUnlock(false);
+    // Force re-decryption of all messages with the recovered key.
+    setState((s) => ({ ...s, messages: s.messages.map((m) => ({ ...m, plaintext: m.deleted ? '' : undefined })) }));
+    refreshConversations();
+    return true;
+  }, [refreshConversations]);
+
   const signOut = useCallback(async () => {
     await sb.current?.auth.signOut();
     window.location.href = '/login';
   }, []);
 
   const value: AppContextValue = {
-    ...state, me, ready, typing,
+    ...state, me, ready, typing, needsUnlock,
     toggleLike, toggleSave, sharePost, addComment, createPost, toggleFollow,
     viewStory, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
-    markAllNotificationsRead, userById, updateProfile, signOut,
+    markAllNotificationsRead, userById, updateProfile, unlock, signOut,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

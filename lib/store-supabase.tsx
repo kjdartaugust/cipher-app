@@ -36,34 +36,51 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   if (!sb.current) sb.current = createClient();
 
   // -------------------------------- bootstrap --------------------------------
+  // The provider mounts once in the root layout — possibly before there is a
+  // session (e.g. on /login). So we load both on mount AND whenever auth state
+  // changes (sign-in/sign-up), and we never leave the UI hung on an error.
   useEffect(() => {
     let cancelled = false;
     const supabase = sb.current;
     if (!supabase) return;
-    (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return; // layout will have redirected to /login
-      myId.current = auth.user.id;
-      const { pair } = await ensureKeyPair(auth.user.id);
-      keypair.current = pair;
 
-      const data = await loadEverything(supabase, auth.user.id);
-      sealed.current = data.sealedKeys;
-      const messages = await decryptAll(data.messages);
-      if (cancelled) return;
-      setState({
-        users: data.users,
-        posts: data.posts,
-        stories: data.stories,
-        conversations: data.conversations,
-        messages,
-        notifications: data.notifications,
-      });
-      setReady(true);
-      subscribe(supabase, data.conversations.map((c) => c.id));
-    })();
+    async function boot(userId: string) {
+      if (cancelled || myId.current === userId) return;
+      myId.current = userId;
+      try {
+        const { pair } = await ensureKeyPair(userId);
+        keypair.current = pair;
+        const data = await loadEverything(supabase!, userId);
+        sealed.current = data.sealedKeys;
+        const messages = await decryptAll(data.messages);
+        if (cancelled) return;
+        setState({
+          users: data.users,
+          posts: data.posts,
+          stories: data.stories,
+          conversations: data.conversations,
+          messages,
+          notifications: data.notifications,
+        });
+        subscribe(supabase!, data.conversations.map((c) => c.id));
+      } catch (err) {
+        // Don't trap the user on "Generating your keys…" — surface and continue.
+        console.error('[Cipher] bootstrap failed:', err);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) boot(data.user.id);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) boot(session.user.id);
+    });
+
     return () => {
       cancelled = true;
+      sub.subscription.unsubscribe();
       channel.current?.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

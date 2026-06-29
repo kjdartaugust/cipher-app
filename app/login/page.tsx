@@ -8,8 +8,8 @@ import { ArrowRight, KeyRound, Lock, Mail, ShieldCheck, User } from 'lucide-reac
 import { Logo } from '@/components/ui/logo';
 import { IS_DEMO } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
-import { generateKeyPair } from '@/lib/crypto';
-import { ensureKeyPair, storeKeyPair } from '@/lib/keys';
+import { generateKeyPair, randomSalt, unwrapPrivateKey, wrapPrivateKey } from '@/lib/crypto';
+import { ensureKeyPair, loadKeyPair, storeKeyPair } from '@/lib/keys';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -51,21 +51,23 @@ export default function AuthPage() {
     try {
       if (mode === 'signup') {
         const pair = await generateKeyPair();
+        const salt = await randomSalt();
+        const encPrivate = await wrapPrivateKey(pair.privateKey, form.password, salt);
         const username = (form.username || form.email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_.]/g, '');
         const { data, error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
           options: {
-            data: {
-              username,
-              name: form.name || username,
-              public_key: pair.publicKey,
-            },
+            data: { username, name: form.name || username, public_key: pair.publicKey },
             emailRedirectTo: `${location.origin}/auth/callback`,
           },
         });
         if (error) throw error;
         if (data.user) storeKeyPair(data.user.id, pair);
+        // Persist the password-wrapped private key so other devices can recover it.
+        if (data.session && data.user) {
+          await supabase.from('profiles').update({ enc_private_key: encPrivate, key_salt: salt }).eq('id', data.user.id);
+        }
         if (!data.session) {
           setInfo('Check your email to confirm your account, then sign in.');
           setMode('signin');
@@ -80,13 +82,7 @@ export default function AuthPage() {
           password: form.password,
         });
         if (error) throw error;
-        // Make sure this device has a key pair; publish a fresh public key if rotated.
-        if (data.user) {
-          const { pair, rotated } = await ensureKeyPair(data.user.id);
-          if (rotated) {
-            await supabase.from('profiles').update({ public_key: pair.publicKey }).eq('id', data.user.id);
-          }
-        }
+        if (data.user) await recoverKeys(supabase, data.user.id, form.password);
         router.push('/feed');
         router.refresh();
       }
@@ -94,6 +90,41 @@ export default function AuthPage() {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
       setLoading(false);
     }
+  }
+
+  // Recover the user's key pair on this device after sign-in:
+  //  1. If a wrapped key is stored, decrypt it with the password (portable — works on any device).
+  //  2. Else migrate this device's existing local key by wrapping + uploading it.
+  //  3. Else (new device, no stored key) generate a fresh pair and publish it.
+  async function recoverKeys(supabase: NonNullable<ReturnType<typeof createClient>>, userId: string, password: string) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('public_key, enc_private_key, key_salt')
+      .eq('id', userId)
+      .single();
+
+    if (prof?.enc_private_key && prof?.key_salt) {
+      try {
+        const privateKey = await unwrapPrivateKey(prof.enc_private_key, password, prof.key_salt);
+        storeKeyPair(userId, { publicKey: prof.public_key, privateKey });
+        return;
+      } catch {
+        // wrong password or corrupt blob — fall through to local/fresh handling
+      }
+    }
+
+    const local = loadKeyPair(userId);
+    if (local) {
+      const salt = await randomSalt();
+      const encPrivate = await wrapPrivateKey(local.privateKey, password, salt);
+      await supabase.from('profiles').update({ enc_private_key: encPrivate, key_salt: salt, public_key: local.publicKey }).eq('id', userId);
+      return;
+    }
+
+    const { pair } = await ensureKeyPair(userId);
+    const salt = await randomSalt();
+    const encPrivate = await wrapPrivateKey(pair.privateKey, password, salt);
+    await supabase.from('profiles').update({ public_key: pair.publicKey, enc_private_key: encPrivate, key_salt: salt }).eq('id', userId);
   }
 
   return (

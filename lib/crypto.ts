@@ -110,6 +110,41 @@ export async function decryptMessage(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Portable keys: wrap the private key with a password-derived key so the same
+// key pair can be recovered on any device. The server only stores the wrapped
+// blob + salt — never the password or the plaintext private key.
+// ---------------------------------------------------------------------------
+export async function randomSalt(): Promise<string> {
+  const s = await ready();
+  return s.to_base64(s.randombytes_buf(32));
+}
+
+// Derive a 32-byte wrapping key from the password, keyed by the salt (BLAKE2b).
+// Note: this is a lightweight KDF (not Argon2 — that primitive isn't in the
+// standard libsodium build). Adequate for this demo; for production prefer a
+// slow memory-hard KDF via libsodium-wrappers-sumo.
+async function deriveKey(password: string, saltB64: string): Promise<Uint8Array> {
+  const s = await ready();
+  return s.crypto_generichash(s.crypto_secretbox_KEYBYTES, s.from_string(password), s.from_base64(saltB64));
+}
+
+export async function wrapPrivateKey(privateKey: string, password: string, saltB64: string): Promise<string> {
+  const s = await ready();
+  const key = await deriveKey(password, saltB64);
+  const nonce = s.randombytes_buf(s.crypto_secretbox_NONCEBYTES);
+  const cipher = s.crypto_secretbox_easy(s.from_base64(privateKey), nonce, key);
+  return `${s.to_base64(nonce)}:${s.to_base64(cipher)}`;
+}
+
+export async function unwrapPrivateKey(wrapped: string, password: string, saltB64: string): Promise<string> {
+  const s = await ready();
+  const [nonceB64, cipherB64] = wrapped.split(':');
+  const key = await deriveKey(password, saltB64);
+  const opened = s.crypto_secretbox_open_easy(s.from_base64(cipherB64), s.from_base64(nonceB64), key);
+  return s.to_base64(opened);
+}
+
 /** Short fingerprint of a public key for the "verify safety number" UX. */
 export async function keyFingerprint(publicKey: string): Promise<string> {
   const s = await ready();

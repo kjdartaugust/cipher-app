@@ -1,10 +1,10 @@
 import type { Config } from 'tailwindcss';
 
-// Apple-style system: pure black/white + one electric-blue accent.
-// The legacy `cipher` scale is remapped to blue so existing class names
-// (text-cipher-300, bg-cipher-600, bg-cipher-gradient, …) inherit the new look
-// without touching every component.
-const BLUE = '#0A84FF';
+// Cipher identity: pure black/white + a single electric-violet accent.
+// Both the legacy `cipher` scale and the `blue` alias map to violet so every
+// existing class name (text-cipher-300, bg-blue, bg-cipher-gradient, …)
+// inherits the accent without touching each component.
+const BLUE = '#6D28D9';
 
 const config: Config = {
   content: [
@@ -18,13 +18,20 @@ const config: Config = {
         soft: '#FFFFFF',
         blue: {
           DEFAULT: BLUE,
-          50: '#E6F2FF',
-          100: '#CCE5FF',
-          300: '#5AB0FF',
-          400: '#409CFF',
-          500: BLUE,
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          300: '#A78BFA',
+          400: '#8B5CF6',
+          500: '#7C3AED',
           600: BLUE,
-          700: '#0066CC',
+          700: '#5B21B6',
+        },
+        violet: {
+          DEFAULT: BLUE,
+          300: '#A78BFA',
+          400: '#8B5CF6',
+          500: '#7C3AED',
+          600: BLUE,
         },
         // Apple dark elevated surfaces
         surface: '#1C1C1E',
@@ -32,16 +39,16 @@ const config: Config = {
         hairline: 'rgba(255,255,255,0.10)',
         // legacy alias -> blue, so all existing cipher-* classes become blue
         cipher: {
-          50: '#E6F2FF',
-          100: '#CCE5FF',
-          200: '#99CCFF',
-          300: '#5AB0FF',
-          400: '#409CFF',
-          500: BLUE,
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#A78BFA',
+          400: '#8B5CF6',
+          500: '#7C3AED',
           600: BLUE,
-          700: '#0066CC',
-          800: '#0A84FF',
-          900: '#0066CC',
+          700: '#5B21B6',
+          800: '#4C1D95',
+          900: '#4C1D95',
         },
       },
       fontFamily: {

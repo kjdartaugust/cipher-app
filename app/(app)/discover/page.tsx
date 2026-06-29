@@ -3,135 +3,166 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, UserCheck, UserPlus } from 'lucide-react';
+import { Search, TrendingUp, UserPlus } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
 import { Avatar } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/post/post-card';
 import { useApp } from '@/lib/store';
-import { compactNumber } from '@/lib/utils';
+import { cn, compactNumber } from '@/lib/utils';
+import type { User } from '@/lib/types';
 
-export default function DiscoverPage() {
-  const { users, posts, me, toggleFollow, blocked } = useApp();
+const MOODS = ['🔥', '✨', '🌙', '🎧', '💜', '☕', '🛰️', '📡', '🧠', '🫧'];
+const moodFor = (id: string) => MOODS[id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % MOODS.length];
+
+type Presence = 'online' | 'chatting' | 'away';
+const RING: Record<Presence, string> = {
+  online: 'shadow-[0_0_0_2px_#000,0_0_0_4px_#22c55e]',
+  chatting: 'shadow-[0_0_0_2px_#000,0_0_0_4px_#6D28D9]',
+  away: 'shadow-[0_0_0_2px_#000,0_0_0_4px_#3f3f46]',
+};
+const PRESENCE_LABEL: Record<Presence, string> = { online: 'online now', chatting: 'in a Cipher', away: 'away' };
+
+export default function PulsePage() {
+  const { users, posts, me, blocked, toggleFollow, messages } = useApp();
   const [query, setQuery] = useState('');
 
-  const results = useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return users.filter(
-      (u) => u.id !== me.id && !blocked.includes(u.id) && (u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q))
-    );
-  }, [query, users, me.id, blocked]);
+  function presenceOf(u: User): Presence {
+    const recentlyMessaged = messages.some((m) => m.senderId === u.id && Date.now() - m.createdAt < 4 * 60_000);
+    if (u.online && recentlyMessaged) return 'chatting';
+    if (u.online) return 'online';
+    return 'away';
+  }
+
+  const people = useMemo(
+    () => users.filter((u) => u.id !== me.id && !blocked.includes(u.id)),
+    [users, me.id, blocked]
+  );
+
+  const results = query.trim()
+    ? people.filter((u) => (u.name + u.username).toLowerCase().includes(query.toLowerCase()))
+    : [];
+
+  const live = useMemo(
+    () => [...people].sort((a, b) => Number(b.online) - Number(a.online)),
+    [people]
+  );
 
   const trending = useMemo(
-    () => [...posts].sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0)).slice(0, 6),
+    () => [...posts].sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0)).slice(0, 4),
     [posts]
   );
 
-  const suggested = users.filter((u) => u.id !== me.id && !me.following.includes(u.id) && !blocked.includes(u.id));
+  const latestPost = (id: string) => posts.filter((p) => p.authorId === id).sort((a, b) => b.createdAt - a.createdAt)[0];
 
   return (
-    <div className="mx-auto max-w-2xl border-x border-white/5">
-      <PageHeader kicker="Explore" title="Discover" />
+    <div className="mx-auto max-w-2xl border-x border-white/10">
+      <PageHeader kicker="Live" title="Pulse" />
 
-      <div className="p-4">
-        <div className="relative">
+      <div className="p-5 sm:p-8">
+        <div className="relative mb-7">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search people and @usernames"
-            className="input pl-11"
-          />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find people on Cipher" className="input pl-11" />
         </div>
-      </div>
 
-      {query.trim() ? (
-        <div className="px-4 pb-4">
-          <h2 className="mb-2 text-sm font-semibold text-white/50">
-            {results.length} result{results.length !== 1 && 's'}
-          </h2>
+        {query.trim() ? (
           <div className="space-y-1">
+            <p className="kicker mb-2">{results.length} result{results.length !== 1 && 's'}</p>
             {results.map((u) => (
-              <PersonRow key={u.id} user={u} following={me.following.includes(u.id)} onFollow={() => toggleFollow(u.id)} />
+              <PersonRow key={u.id} u={u} following={me.following.includes(u.id)} onFollow={() => toggleFollow(u.id)} presence={presenceOf(u)} />
             ))}
-            {results.length === 0 && <p className="py-8 text-center text-sm text-white/40">No people found.</p>}
+            {results.length === 0 && <p className="py-8 text-center text-sm text-white/40">No one found.</p>}
           </div>
-        </div>
-      ) : (
-        <>
-          {/* trending */}
-          <section className="px-4 pb-6">
-            <h2 className="mb-3 flex items-center gap-2 font-semibold">
-              <TrendingUp className="h-5 w-5 text-cipher-400" /> Trending posts
-            </h2>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {trending.map((p, i) => {
-                const author = users.find((u) => u.id === p.authorId)!;
-                return (
-                  <Link
-                    key={p.id}
-                    href={`/u/${author.username}`}
-                    className="group relative aspect-square overflow-hidden rounded-xl bg-white/5"
-                  >
-                    {p.media?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.media[0].url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-                    ) : (
-                      <div className="flex h-full items-center p-3 text-sm text-white/70">{p.text}</div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                      <p className="flex items-center gap-1 text-xs font-semibold text-white">
-                        <span className="grid h-4 w-4 place-items-center rounded-full bg-cipher-600 text-[9px]">{i + 1}</span>
-                        ♥ {compactNumber(p.likes.length)}
+        ) : (
+          <>
+            {/* live presence grid */}
+            <section className="mb-9">
+              <p className="kicker mb-4">Right now</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {live.map((u) => {
+                  const presence = presenceOf(u);
+                  const post = latestPost(u.id);
+                  return (
+                    <motion.div
+                      key={u.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col items-center rounded-2xl border border-white/10 bg-surface/60 p-4 text-center"
+                    >
+                      <Link href={`/u/${u.username}`} className="relative">
+                        <span className={cn('block rounded-full', RING[presence])}>
+                          <Avatar src={u.avatar} alt={u.name} size={62} />
+                        </span>
+                        <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-black text-base">
+                          {moodFor(u.id)}
+                        </span>
+                      </Link>
+                      <Link href={`/u/${u.username}`} className="mt-3 flex items-center gap-1">
+                        <span className="truncate text-sm font-semibold">{u.name}</span>
+                        {u.verified && <VerifiedBadge />}
+                      </Link>
+                      <p className={cn('text-[11px] font-medium uppercase tracking-wide', presence === 'online' ? 'text-green-400' : presence === 'chatting' ? 'text-violet-300' : 'text-white/35')}>
+                        {PRESENCE_LABEL[presence]}
                       </p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
+                      {post && <p className="mt-1.5 line-clamp-2 text-xs text-white/45">{post.text || '📷 shared a moment'}</p>}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </section>
 
-          {/* suggested */}
-          <section className="px-4 pb-8">
-            <h2 className="mb-3 font-semibold">Suggested friends</h2>
-            <div className="space-y-1">
-              {suggested.map((u) => (
-                <PersonRow key={u.id} user={u} following={me.following.includes(u.id)} onFollow={() => toggleFollow(u.id)} />
-              ))}
-              {suggested.length === 0 && <p className="py-6 text-center text-sm text-white/40">You follow everyone already 🎉</p>}
-            </div>
-          </section>
-        </>
-      )}
+            {/* trending */}
+            <section className="mb-9">
+              <p className="kicker mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-violet-400" /> Trending in the club</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {trending.map((p, i) => {
+                  const a = users.find((u) => u.id === p.authorId)!;
+                  return (
+                    <Link key={p.id} href={`/u/${a.username}`} className="group relative aspect-square overflow-hidden rounded-xl bg-surface">
+                      {p.media?.[0]
+                        ? // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.media[0].url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                        : <div className="flex h-full items-center p-2 text-xs text-white/70">{p.text}</div>}
+                      <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-violet-300">#{i + 1}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* suggested */}
+            <section>
+              <p className="kicker mb-3">People to add</p>
+              <div className="space-y-1">
+                {people.filter((u) => !me.following.includes(u.id)).map((u) => (
+                  <PersonRow key={u.id} u={u} following={false} onFollow={() => toggleFollow(u.id)} presence={presenceOf(u)} />
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-function PersonRow({
-  user,
-  following,
-  onFollow,
-}: {
-  user: ReturnType<typeof useApp>['users'][number];
-  following: boolean;
-  onFollow: () => void;
-}) {
+function PersonRow({ u, following, onFollow, presence }: { u: User; following: boolean; onFollow: () => void; presence: Presence }) {
   return (
-    <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/5">
-      <Link href={`/u/${user.username}`}>
-        <Avatar src={user.avatar} alt={user.name} size={48} online={user.online} />
+    <div className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.04]">
+      <Link href={`/u/${u.username}`}>
+        <span className={cn('block rounded-full', RING[presence])}>
+          <Avatar src={u.avatar} alt={u.name} size={46} />
+        </span>
       </Link>
-      <Link href={`/u/${user.username}`} className="min-w-0 flex-1">
+      <Link href={`/u/${u.username}`} className="min-w-0 flex-1">
         <div className="flex items-center gap-1">
-          <span className="truncate font-medium hover:underline">{user.name}</span>
-          {user.verified && <VerifiedBadge />}
+          <span className="truncate text-sm font-semibold">{u.name}</span>
+          {u.verified && <VerifiedBadge />}
         </div>
-        <p className="truncate text-xs text-white/40">@{user.username} · {compactNumber(user.followers.length)} followers</p>
+        <p className="truncate text-xs text-white/40">@{u.username} · {compactNumber(u.followers.length)} followers</p>
       </Link>
-      <button onClick={onFollow} className={following ? 'btn-ghost px-3 py-1.5 text-xs' : 'btn-primary px-3 py-1.5 text-xs'}>
-        {following ? <><UserCheck className="h-3.5 w-3.5" /> Following</> : <><UserPlus className="h-3.5 w-3.5" /> Follow</>}
-      </button>
-    </motion.div>
+      {!following && (
+        <button onClick={onFollow} className="btn-primary px-3 py-1.5 text-xs"><UserPlus className="h-3.5 w-3.5" /> Add</button>
+      )}
+    </div>
   );
 }

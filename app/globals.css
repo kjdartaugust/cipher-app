@@ -74,9 +74,29 @@ body {
   background-size: 400% 100%;
 }
 
-/* clean solid blue story ring */
+/* electric-violet story / moment ring */
 .story-ring {
-  background: #0A84FF;
+  background: #6D28D9;
+}
+
+/* frosted command bar */
+.frost {
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
+.glow-violet {
+  box-shadow: 0 0 0 1px rgba(109, 40, 217, 0.5), 0 0 22px rgba(109, 40, 217, 0.45);
+}
+
+/* pulsing violet orbit for live Moments */
+@keyframes orbit-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.55), 0 0 14px rgba(109, 40, 217, 0.5); }
+  50% { box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.25), 0 0 22px rgba(109, 40, 217, 0.7); }
+}
+.orbit-live {
+  animation: orbit-pulse 2.4s ease-in-out infinite;
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }

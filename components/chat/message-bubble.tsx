@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, CheckCheck, CornerUpLeft, Pencil, Smile, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, CornerUpLeft, Lock, Pencil, Smile, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VoiceNote } from './voice-note';
 import { useApp } from '@/lib/store';
@@ -40,8 +40,8 @@ export function MessageBubble({
   if (message.deleted) {
     return (
       <Wrap mine={mine} showAvatar={showAvatar} sender={sender} isGroup={isGroup}>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm italic text-white/40">
-          This message was deleted
+        <div className={cn('max-w-[80%] py-1 text-sm italic text-white/30', mine && 'text-right')}>
+          message unsent
         </div>
       </Wrap>
     );
@@ -49,29 +49,29 @@ export function MessageBubble({
 
   return (
     <Wrap mine={mine} showAvatar={showAvatar} sender={sender} isGroup={isGroup}>
-      <div className="group relative max-w-[78%]">
-        {isGroup && !mine && showAvatar && (
-          <p className="mb-0.5 ml-1 text-xs font-medium text-cipher-300">{sender.name}</p>
+      <div className={cn('group relative max-w-[80%]', mine && 'flex flex-col items-end')}>
+        {!mine && (
+          <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-violet-400">
+            {isGroup ? sender.name : sender.name}
+          </p>
         )}
 
         {replyPreview && (
           <div
             className={cn(
-              'mb-1 rounded-lg border-l-2 border-cipher-400 bg-white/5 px-2.5 py-1 text-xs',
-              mine ? 'ml-auto' : ''
+              'mb-1 border-l-2 border-violet-500 pl-2.5 text-xs',
+              mine ? 'border-l-0 border-r-2 pl-0 pr-2.5 text-right' : ''
             )}
           >
-            <p className="font-medium text-cipher-300">{replyPreview.name}</p>
-            <p className="truncate text-white/50">{replyPreview.text}</p>
+            <p className="font-medium text-violet-300">{replyPreview.name}</p>
+            <p className="truncate text-white/40">{replyPreview.text}</p>
           </div>
         )}
 
         <div
           className={cn(
-            'relative rounded-2xl px-3.5 py-2 text-[15px] leading-snug',
-            mine
-              ? 'rounded-br-md bg-cipher-gradient text-white'
-              : 'rounded-bl-md bg-white/[0.08] text-soft'
+            'relative text-[15px] leading-relaxed text-white',
+            mine ? 'text-right' : 'text-left'
           )}
         >
           {editing ? (
@@ -112,10 +112,11 @@ export function MessageBubble({
             <span className="whitespace-pre-wrap break-words">{message.plaintext}</span>
           )}
 
-          <span className={cn('mt-1 flex items-center justify-end gap-1 text-[10px]', mine ? 'text-white/70' : 'text-white/40')}>
-            {message.editedAt && <span>edited</span>}
+          <span className={cn('mt-0.5 flex items-center gap-1 text-[10px] text-white/30', mine ? 'justify-end' : 'justify-start')}>
+            <Lock className="h-2.5 w-2.5 text-violet-400/50" strokeWidth={2.5} />
+            {message.editedAt && <span>edited ·</span>}
             {clockTime(message.createdAt)}
-            {mine && (read ? <CheckCheck className="h-3.5 w-3.5 text-sky-300" /> : delivered ? <CheckCheck className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />)}
+            {mine && (read ? <CheckCheck className="h-3 w-3 text-violet-300" /> : delivered ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
           </span>
         </div>
 
@@ -197,9 +198,10 @@ function Wrap({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn('flex items-end gap-2 px-2', mine ? 'flex-row-reverse' : 'flex-row')}
+      initial={{ opacity: 0, x: mine ? 18 : -18 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 40, mass: 0.6 }}
+      className={cn('flex items-start gap-2 px-3', mine ? 'flex-row-reverse' : 'flex-row')}
     >
       {!mine && isGroup ? (
         showAvatar ? <Avatar src={sender.avatar} alt={sender.name} size={28} /> : <span className="w-7" />

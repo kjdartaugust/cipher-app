@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Phone, ShieldCheck, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { CipherBadge } from '@/components/ui/cipher-badge';
 import { MessageBubble } from './message-bubble';
 import { MessageComposer } from './message-composer';
 import { useConversationMeta } from './chat-helpers';
@@ -59,9 +60,12 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
         <Avatar src={meta.avatar ?? ''} alt={meta.title} size={42} online={meta.online} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{meta.title}</p>
-          <p className="truncate text-xs text-white/45">
-            {isTyping ? <span className="text-cipher-300">typing…</span> : meta.subtitle}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="truncate text-xs text-white/45">
+              {isTyping ? <span className="text-cipher-300">typing…</span> : meta.subtitle}
+            </p>
+            <CipherBadge className="hidden sm:inline-flex" />
+          </div>
         </div>
         <button className="rounded-full p-2 text-white/50 hover:bg-white/10"><Phone className="h-5 w-5" /></button>
         <button className="rounded-full p-2 text-white/50 hover:bg-white/10"><Video className="h-5 w-5" /></button>

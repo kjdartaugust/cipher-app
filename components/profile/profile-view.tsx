@@ -14,7 +14,7 @@ import type { User } from '@/lib/types';
 import { compactNumber } from '@/lib/utils';
 
 export function ProfileView({ user }: { user: User }) {
-  const { me, posts, stories, toggleFollow, createConversation, userById, signOut, blocked, toggleBlock } = useApp();
+  const { me, posts, stories, messages, toggleFollow, createConversation, userById, signOut, blocked, toggleBlock } = useApp();
   const router = useRouter();
   const isMe = user.id === me.id;
   const following = me.following.includes(user.id);
@@ -25,6 +25,8 @@ export function ProfileView({ user }: { user: User }) {
   const savedPosts = posts.filter((p) => p.saves.includes(me.id));
   const grid = tab === 'posts' ? userPosts : savedPosts;
   const highlights = stories.filter((s) => s.authorId === user.id && s.highlighted);
+  // "Ciphers sent" = encrypted messages this user has sent (that we can see).
+  const ciphersSent = messages.filter((m) => m.senderId === user.id).length;
 
   const mutuals = useMemo(
     () => user.followers.filter((id) => me.following.includes(id) && id !== me.id).map(userById),
@@ -38,74 +40,49 @@ export function ProfileView({ user }: { user: User }) {
 
   return (
     <div className="mx-auto max-w-2xl border-x border-white/5">
-      {/* banner */}
-      <div className="h-1 bg-cipher-gradient" />
+      <div className="flex flex-col items-center px-5 pb-4 pt-9 text-center sm:px-8">
+        <Avatar src={user.avatar} alt={user.name} size={104} online={user.online} ring />
+        <h1 className="headline mt-4 flex items-center gap-2 text-3xl leading-none">
+          {user.name}
+          {user.verified && <VerifiedBadge />}
+        </h1>
+        <p className="kicker mt-2">@{user.username}</p>
+        {user.bio && <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-white/75">{user.bio}</p>}
 
-      <div className="px-5 pb-4 pt-7 sm:px-8">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="headline text-4xl leading-none">{user.name}</h1>
-              {user.verified && <VerifiedBadge />}
-            </div>
-            <p className="kicker mt-2">@{user.username}</p>
-          </div>
-          <Avatar src={user.avatar} alt={user.name} size={84} online={user.online} className="shrink-0" />
+        {/* three stats */}
+        <div className="mt-6 grid w-full max-w-sm grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 py-3">
+          <Stat label="Posts" value={userPosts.length} />
+          <Stat label="Ciphers sent" value={compactNumber(ciphersSent)} />
+          <Stat label="Mutuals" value={mutuals.length} />
         </div>
 
-        <div className="mt-4">
-          <p className="max-w-prose text-[15px] leading-relaxed text-white/80">{user.bio}</p>
-
-          <div className="mt-5 flex gap-8 border-y border-white/10 py-3">
-            <Stat label="Posts" value={userPosts.length} />
-            <Stat label="Followers" value={compactNumber(user.followers.length)} />
-            <Stat label="Following" value={compactNumber(user.following.length)} />
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            {isMe ? (
-              <>
-                <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
-                <Link href="/settings" className="btn-ghost text-sm" aria-label="Settings"><SlidersHorizontal className="h-4 w-4" /></Link>
-                {!IS_DEMO && (
-                  <button onClick={signOut} className="btn-ghost text-sm text-rose-300 hover:text-rose-200" aria-label="Log out"><LogOut className="h-4 w-4" /></button>
-                )}
-              </>
-            ) : (
-              <>
-                <button onClick={message} className="btn-ghost text-sm"><MessageCircle className="h-4 w-4" /> Message</button>
-                <button
-                  onClick={() => toggleFollow(user.id)}
-                  className={following ? 'btn-ghost text-sm' : 'btn-primary text-sm'}
-                >
-                  {following ? <><UserCheck className="h-4 w-4" /> Following</> : <><UserPlus className="h-4 w-4" /> Follow</>}
-                </button>
-                <button
-                  onClick={() => toggleBlock(user.id)}
-                  className={`btn-ghost text-sm ${blocked.includes(user.id) ? 'text-rose-300' : 'text-white/50'}`}
-                  aria-label={blocked.includes(user.id) ? 'Unblock' : 'Block'}
-                  title={blocked.includes(user.id) ? 'Unblock' : 'Block'}
-                >
-                  <UserX className="h-4 w-4" />
-                </button>
-              </>
-            )}
-          </div>
-
-          {!isMe && mutuals.length > 0 && (
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {mutuals.slice(0, 3).map((m) => (
-                  <span key={m.id} className="rounded-full border-2 border-ink">
-                    <Avatar src={m.avatar} alt={m.name} size={24} />
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-white/45">
-                Followed by {mutuals.slice(0, 2).map((m) => m.name).join(', ')}
-                {mutuals.length > 2 && ` + ${mutuals.length - 2} more`}
-              </p>
-            </div>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {isMe ? (
+            <>
+              <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
+              <Link href="/settings" className="btn-ghost text-sm" aria-label="Settings"><SlidersHorizontal className="h-4 w-4" /></Link>
+              {!IS_DEMO && (
+                <button onClick={signOut} className="btn-ghost text-sm text-rose-300 hover:text-rose-200" aria-label="Log out"><LogOut className="h-4 w-4" /></button>
+              )}
+            </>
+          ) : (
+            <>
+              <button onClick={message} className="btn-primary text-sm"><MessageCircle className="h-4 w-4" /> Message</button>
+              <button
+                onClick={() => toggleFollow(user.id)}
+                className={following ? 'btn-ghost text-sm' : 'btn-ghost text-sm'}
+              >
+                {following ? <><UserCheck className="h-4 w-4" /> Following</> : <><UserPlus className="h-4 w-4" /> Follow</>}
+              </button>
+              <button
+                onClick={() => toggleBlock(user.id)}
+                className={`btn-ghost text-sm ${blocked.includes(user.id) ? 'text-rose-300' : 'text-white/50'}`}
+                aria-label={blocked.includes(user.id) ? 'Unblock' : 'Block'}
+                title={blocked.includes(user.id) ? 'Unblock' : 'Block'}
+              >
+                <UserX className="h-4 w-4" />
+              </button>
+            </>
           )}
         </div>
 
@@ -128,19 +105,20 @@ export function ProfileView({ user }: { user: User }) {
         {isMe && <Tab active={tab === 'saved'} onClick={() => setTab('saved')} icon={Bookmark} label="Saved" />}
       </div>
 
-      {/* grid */}
-      <div className="grid grid-cols-2 gap-2 p-5 sm:px-8">
+      {/* masonry grid */}
+      <div className="columns-3 gap-2 p-5 sm:px-8 [&>*]:mb-2">
         {grid.filter((p) => p.media?.[0]).map((p) => (
           <motion.div
             key={p.id}
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-white/5"
+            transition={{ duration: 0.2 }}
+            className="group relative break-inside-avoid overflow-hidden rounded-lg bg-white/5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.media![0].url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-            <div className="absolute inset-0 hidden items-end bg-gradient-to-t from-black/70 to-transparent p-3 text-sm font-semibold text-white group-hover:flex">
-              <span className="flex gap-4"><span>♥ {p.likes.length}</span><span>💬 {p.comments.length}</span></span>
+            <img src={p.media![0].url} alt="" className="w-full object-cover transition group-hover:scale-[1.03]" />
+            <div className="absolute inset-0 hidden items-end bg-gradient-to-t from-black/70 to-transparent p-2 text-xs font-semibold text-white group-hover:flex">
+              <span className="flex gap-3"><span>♥ {p.likes.length}</span><span>💬 {p.comments.length}</span></span>
             </div>
           </motion.div>
         ))}
@@ -158,7 +136,7 @@ export function ProfileView({ user }: { user: User }) {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div>
+    <div className="px-2 text-center">
       <p className="headline text-2xl leading-none">{value}</p>
       <p className="kicker mt-1">{label}</p>
     </div>

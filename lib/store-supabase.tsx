@@ -52,6 +52,9 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       try {
         const { pair } = await ensureKeyPair(userId);
         keypair.current = pair;
+        // Authorize the realtime socket so RLS-protected change events reach us.
+        const { data: sess } = await supabase!.auth.getSession();
+        if (sess.session?.access_token) supabase!.realtime.setAuth(sess.session.access_token);
         const data = await loadEverything(supabase!, userId);
         sealed.current = data.sealedKeys;
         convIdsRef.current = data.conversations.map((c) => c.id);
@@ -78,6 +81,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       if (data.user) boot(data.user.id);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) supabase.realtime.setAuth(session.access_token);
       if (session?.user) boot(session.user.id);
     });
 
@@ -180,6 +184,18 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       });
     }, 250);
   }, []);
+
+  // Polling fallback: even if the realtime socket isn't delivering events,
+  // refresh conversations/messages every few seconds so nothing requires a
+  // manual page refresh. Realtime (above) still provides instant updates when
+  // available; this just guarantees eventual consistency.
+  useEffect(() => {
+    if (!ready) return;
+    const iv = setInterval(() => refreshConversations(), 4000);
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshConversations(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', onVisible); };
+  }, [ready, refreshConversations]);
 
   const refetchMessageMeta = useCallback(async (messageId: string) => {
     const supabase = sb.current!;

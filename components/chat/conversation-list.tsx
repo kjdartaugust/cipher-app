@@ -1,0 +1,90 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { PenSquare, Search, ShieldCheck } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import { NewChatModal } from './new-chat-modal';
+import { useConversationMeta, lastMessagePreview } from './chat-helpers';
+import { useApp } from '@/lib/store';
+import type { Conversation } from '@/lib/types';
+import { cn, timeAgo } from '@/lib/utils';
+
+export function ConversationList() {
+  const { conversations } = useApp();
+  const [query, setQuery] = useState('');
+  const [newChat, setNewChat] = useState(false);
+
+  const sorted = [...conversations].sort((a, b) => b.lastMessageAt - a.lastMessageAt);
+
+  return (
+    <div className="flex h-screen flex-col border-r border-white/5">
+      <div className="sticky top-0 z-10 border-b border-white/5 bg-ink/70 p-4 backdrop-blur-xl">
+        <div className="mb-3 flex items-center justify-between">
+          <h1 className="text-xl font-bold">Messages</h1>
+          <button onClick={() => setNewChat(true)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
+            <PenSquare className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search conversations"
+            className="input pl-11 py-2.5"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {sorted.map((c) => (
+          <Row key={c.id} conv={c} query={query} />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-center gap-2 border-t border-white/5 py-3 text-xs text-white/30">
+        <ShieldCheck className="h-3.5 w-3.5" /> End-to-end encrypted
+      </div>
+
+      <NewChatModal open={newChat} onClose={() => setNewChat(false)} />
+    </div>
+  );
+}
+
+function Row({ conv, query }: { conv: Conversation; query: string }) {
+  const params = useParams();
+  const active = params?.id === conv.id;
+  const { title, avatar, online, last, unread } = useConversationMeta(conv);
+
+  if (query && !title.toLowerCase().includes(query.toLowerCase())) return null;
+
+  return (
+    <Link
+      href={`/messages/${conv.id}`}
+      className={cn(
+        'flex items-center gap-3 px-4 py-3 transition hover:bg-white/5',
+        active && 'bg-white/[0.06]'
+      )}
+    >
+      <Avatar src={avatar ?? ''} alt={title} size={52} online={online} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className={cn('truncate', unread ? 'font-bold' : 'font-semibold')}>{title}</span>
+          <span className="shrink-0 text-xs text-white/40">{last ? timeAgo(last.createdAt) : ''}</span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className={cn('truncate text-sm', unread ? 'text-white/90' : 'text-white/45')}>
+            {lastMessagePreview(last)}
+          </span>
+          {unread > 0 && (
+            <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-cipher-600 px-1.5 text-xs font-bold text-white">
+              {unread}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}

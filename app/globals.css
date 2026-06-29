@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #0A0A0A;
+  color: #F9FAFB;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/10;
+  }
+  .glass-strong {
+    @apply bg-white/[0.07] backdrop-blur-2xl border border-white/10;
+  }
+  .cipher-text-gradient {
+    @apply bg-cipher-gradient bg-clip-text text-transparent;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-cipher-gradient px-5 py-2.5 font-semibold text-white shadow-lg shadow-cipher-600/25 transition hover:shadow-cipher-600/40 hover:brightness-110 active:scale-[0.98] disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 font-medium text-soft transition hover:bg-white/10 active:scale-[0.98];
+  }
+  .input {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-soft placeholder:text-white/30 outline-none transition focus:border-cipher-600/60 focus:bg-white/[0.07] focus:ring-2 focus:ring-cipher-600/20;
+  }
+  .card {
+    @apply rounded-2xl glass p-4;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 37%, rgba(255,255,255,0.03) 63%);
+  background-size: 400% 100%;
+}
+
+.story-ring {
+  background: conic-gradient(from 180deg, #7C3AED, #a78bfa, #7C3AED);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

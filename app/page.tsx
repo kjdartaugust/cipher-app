@@ -33,19 +33,13 @@ const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transiti
 
 export default function Landing() {
   const { scrollY, scrollYProgress } = useScroll();
-  const qY = useTransform(scrollY, [0, 700], [0, -180]);
-  const qScale = useTransform(scrollY, [0, 700], [1, 0.65]);
-  const qOpacity = useTransform(scrollY, [0, 600], [1, 0.2]);
+  const qScale = useTransform(scrollY, [0, 700], [1, 0.7]);
+  const qOpacity = useTransform(scrollY, [0, 600], [1, 0.25]);
 
   return (
     <main className="relative overflow-hidden">
       {/* scroll-progress beam */}
       <motion.div style={{ scaleX: scrollYProgress }} className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left bg-cipher-gradient" />
-
-      {/* quasar centerpiece behind the hero — drifts as you scroll */}
-      <motion.div style={{ y: qY, scale: qScale, opacity: qOpacity }} className="pointer-events-none absolute inset-x-0 top-[-250px] flex justify-center">
-        <QuasarCore size={620} className="opacity-90" />
-      </motion.div>
 
       {/* nav */}
       <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
@@ -57,7 +51,17 @@ export default function Landing() {
       </header>
 
       {/* hero */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 pt-16 text-center sm:pt-24">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 pt-10 text-center sm:pt-14">
+        {/* quasar centerpiece — in-flow, centered, responsive, drifts on scroll */}
+        <motion.div
+          style={{ scale: qScale, opacity: qOpacity }}
+          className="relative mx-auto mb-2 flex h-[150px] items-center justify-center overflow-visible sm:h-[200px]"
+        >
+          <div className="scale-[0.5] sm:scale-[0.78] lg:scale-100">
+            <QuasarCore size={440} />
+          </div>
+        </motion.div>
+
         <motion.div initial="hidden" animate="show" variants={container}>
           <motion.div variants={item} className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-600/30 bg-violet-600/10 px-4 py-1.5 text-xs font-medium text-violet-200">
             <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />

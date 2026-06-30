@@ -6,25 +6,24 @@ import { motion } from 'framer-motion';
 // in a conversation. The more ciphers exchanged, the more massive it becomes.
 // (No animated CSS filter — that breaks page compositing on pinch-zoom.)
 const DISK = 'conic-gradient(from 0deg, #FDE68A, #FB923C, #D946EF, #7C3AED, #4F8BFF, #22D3EE, #FDE68A)';
-const DONUT = 'radial-gradient(closest-side, transparent 38%, #000 43%, #000 88%, transparent 97%)';
 
 export function BlackHole({ size, count }: { size: number; count: number }) {
   return (
     <div className="relative grid place-items-center" style={{ width: size, height: size, contain: 'layout paint' }}>
-      {/* inclined, spinning disk (flat scaleY squash — zoom-stable) */}
+      {/* inclined, spinning disk (flat scaleY squash — zoom-stable, no masks) */}
       <div className="absolute inset-0 grid place-items-center" style={{ transform: 'scaleY(0.34)' }}>
         <div className="absolute inset-0 rounded-full opacity-40 blur-2xl" style={{ background: DISK }} />
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
           className="absolute inset-0 rounded-full blur-[2px]"
-          style={{ background: DISK, maskImage: DONUT, WebkitMaskImage: DONUT }}
+          style={{ background: DISK }}
         />
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
           className="absolute inset-[16%] rounded-full opacity-70 blur-[2px]"
-          style={{ background: DISK, maskImage: DONUT, WebkitMaskImage: DONUT }}
+          style={{ background: DISK }}
         />
       </div>
       {/* event horizon, facing the viewer */}

@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils';
  * blazing photon ring, and bright collimated polar jets. Pure CSS + motion.
  */
 export function QuasarCore({ className, size = 560 }: { className?: string; size?: number }) {
-  const donut = 'radial-gradient(closest-side, transparent 30%, #000 36%, #000 92%, transparent 100%)';
   // hot core → cool rim, swept around the disk
   const disk =
     'conic-gradient(from 0deg, #FDE68A, #FB923C, #D946EF, #7C3AED, #4F8BFF, #22D3EE, #FDE68A)';
@@ -31,19 +30,19 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
       <div className="absolute inset-0 grid place-items-center" style={{ transform: 'scaleY(0.3)' }}>
         {/* soft outer halo */}
         <div className="absolute rounded-full opacity-40 blur-3xl" style={{ width: size, height: size, background: disk }} />
-        {/* main rotating disk */}
+        {/* main rotating disk (full circle; the dark core makes the hole) */}
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
           className="absolute rounded-full blur-[3px]"
-          style={{ width: size, height: size, background: disk, maskImage: donut, WebkitMaskImage: donut }}
+          style={{ width: size, height: size, background: disk }}
         />
         {/* brighter inner band, counter-rotating */}
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
           className="absolute rounded-full opacity-80 blur-[2px]"
-          style={{ width: size * 0.62, height: size * 0.62, background: disk, maskImage: donut, WebkitMaskImage: donut }}
+          style={{ width: size * 0.62, height: size * 0.62, background: disk }}
         />
       </div>
 
@@ -55,18 +54,12 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
         className="absolute rounded-full blur-2xl"
         style={{ width: size * 0.4, height: size * 0.4, background: 'radial-gradient(circle, #FFFFFF, #FDE68A 35%, rgba(217,70,239,0.5) 65%, transparent 75%)' }}
       />
-      {/* fast-spinning photon ring just outside the event horizon */}
+      {/* fast-spinning photon ring (full disk; the event horizon sits on top) */}
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
         className="absolute rounded-full blur-[1px]"
-        style={{
-          width: size * 0.3,
-          height: size * 0.3,
-          background: disk,
-          maskImage: 'radial-gradient(closest-side, transparent 58%, #000 62%, #000 84%, transparent 92%)',
-          WebkitMaskImage: 'radial-gradient(closest-side, transparent 58%, #000 62%, #000 84%, transparent 92%)',
-        }}
+        style={{ width: size * 0.3, height: size * 0.3, background: disk }}
       />
       {/* black hole + photon ring */}
       <div

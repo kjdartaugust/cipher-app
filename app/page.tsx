@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { AppPreview } from '@/components/marketing/app-preview';
+import { Showcase } from '@/components/marketing/showcase';
 
 const features = [
   { icon: Lock, title: 'Messages only you can read', body: 'Every DM and group chat is encrypted on your device with libsodium. The server only ever holds ciphertext.' },
@@ -90,6 +91,9 @@ export default function Landing() {
           ))}
         </motion.div>
       </section>
+
+      {/* scrolling screen showcase */}
+      <Showcase />
 
       {/* encryption explainer */}
       <section className="mx-auto max-w-6xl px-6 pb-24">

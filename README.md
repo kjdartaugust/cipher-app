@@ -1,58 +1,79 @@
 # 🔐 Cipher — Private. Encrypted. Social.
 
-An end-to-end encrypted social messaging web app. Cipher blends a polished social
-experience (feed, stories, profiles, discover) with **private messaging that the
-server can never read** — every DM and group message is encrypted on-device with
-[libsodium](https://doc.libsodium.org/) before it leaves the browser.
+A private, end-to-end encrypted social network with a **"private club"** identity.
+Cipher pairs a distinctive social experience — a swipeable feed, disappearing
+mood drops, and live presence — with **messaging the server can never read**:
+every DM and group message is encrypted on-device with
+[libsodium](https://doc.libsodium.org/) before it ever leaves the browser.
 
 Built with **Next.js 14 (App Router)**, **Supabase** (auth · database · realtime ·
 storage), **Tailwind CSS**, and **Framer Motion**.
 
-> **Brand:** deep black `#0A0A0A` · rich purple `#7C3AED` · soft white `#F9FAFB` · Inter
+> **Identity:** pure black `#000000` · electric violet `#6D28D9` · pure white `#FFFFFF` · Inter
+> · floating command bar · bubble-free chat · private by default
+
+**Live demo:** https://cipher-app-blush.vercel.app
 
 ---
 
 ## ✨ Features
 
-### End-to-end encrypted messaging
-- Private DMs **and** group chats, encrypted client-side with libsodium
+### 🔒 End-to-end encrypted messaging
+- 1:1 DMs **and** group chats, encrypted client-side with libsodium
 - Per-conversation symmetric key **sealed to each member's public key** (`crypto_box_seal`)
 - Messages encrypted with `crypto_secretbox` (XSalsa20-Poly1305) + fresh nonce
-- Delivery & read receipts, live typing indicators
+- Delivery & read receipts, **live typing indicators**
 - Emoji reactions, reply / quote, edit & delete
-- Image & file sharing, **voice note** recording + waveform playback
-- Safety-number (key fingerprint) verification
+- Image & file sharing, **real microphone voice notes** (record → upload → playback)
+- Bubble-free **message rows** with a per-message lock glyph and safety-number verification
+- **Group management:** rename, set avatar, add/remove members, leave (keys re-sealed on add)
 
-### Social feed
-- Photo / video / text posts, like · comment · share · save
-- Algorithmic-style **For You** feed (engagement + affinity + recency) and **Following** tab
-- Trending posts section
+### 🃏 Today Board (feed)
+- Full-screen **swipeable card stack** — swipe right to like, left to skip, tap to expand
+- Keyboard support (← skip, → like) and spring physics; classic list view via a toggle
+- Like · comment · share · save; algorithmic ordering blending engagement, affinity & recency
 
-### Stories
-- 24-hour disappearing photo/video stories with tap-through progress
-- Story reactions, **viewer list** with reactions, profile **highlights**
+### 💜 Moments (stories, reimagined)
+- Encrypted **text or voice mood drops** that expire in **6 hours**
+- Shown as a pulsing violet orbit ring around your avatar; full-screen viewer with
+  large type or a waveform audio player — no camera, no filters
+- Viewer list with reactions
 
-### Profile · Discover · Notifications
-- Avatar, bio, follower/following system, post grid, mutual friends
-- Search users, trending posts, suggested friends
-- Real-time alerts for likes, comments, messages, follows, story reactions
+### 📡 Pulse (live presence)
+- See your circle **right now** — green (online) · violet (in a Cipher) · grey (away),
+  powered by **Supabase Realtime Presence**
+- Mood emoji, latest post, and live status rings
 
-### UI
-- Dark-first aesthetic, purple gradients, glassmorphism cards
-- Framer Motion page transitions & micro-animations
-- Mobile-first: bottom nav on mobile, sidebar on desktop
+### 👤 Profile · 🔔 Notifications · ⚙️ Settings
+- Minimal centered profile: avatar, bio, **Posts / Ciphers sent / Mutuals**, masonry grid, highlights
+- Real-time alerts for likes, comments, messages, follows, reactions
+- Settings hub: **safety number**, **change password** (re-wraps your portable key),
+  **private account**, **blocked accounts**, **delete account**
+
+### 🕵️ Private by default
+- People aren't publicly listed — you're discoverable **only by your username**
+- Pulse and suggestions show your circle only; new people are found via username search
+
+### 🎨 UI
+- Pure black/white with a single electric-violet accent — no gradients or glassmorphism
+- Floating **command bar** (frosted, icon-only) on mobile; sidebar on desktop
+- Inter at display weights, "Cipher Protected" badges, 150–200 ms snappy motion
+- Reduced-motion support, keyboard focus rings, branded loading skeletons
 
 ---
 
 ## 🔒 How the encryption works
 
-1. Each user has a **Curve25519 key pair**. The public key is published; the secret key never leaves the device.
-2. Each conversation gets a random **symmetric key**.
-3. That key is **sealed** to every member's public key (`crypto_box_seal`) — only a member's secret key can open it.
-4. Each message is encrypted with the conversation key. The server stores only `{ ciphertext, nonce }` + sealed key envelopes.
-
-The server (Supabase) therefore stores **ciphertext only** — plaintext exists solely
-in memory on member devices. See [`lib/crypto.ts`](lib/crypto.ts).
+1. Each user owns a **Curve25519 key pair**. The public key is published; the private key
+   never leaves the device.
+2. The private key is also **wrapped with a key derived from your password** (BLAKE2b) and
+   stored server-side, so **any device you log into can recover the same key** — the server
+   never sees the password or the plaintext key. ([`lib/keys.ts`](lib/keys.ts), [`lib/crypto.ts`](lib/crypto.ts))
+3. Each conversation gets a random **symmetric key**, **sealed** to every member's public
+   key (`crypto_box_seal`) — only a member's private key can open it.
+4. Each message is encrypted with the conversation key. Supabase stores only
+   `{ ciphertext, nonce }` + sealed key envelopes — **plaintext exists solely in memory on
+   member devices.**
 
 ---
 
@@ -67,40 +88,43 @@ npm run dev
 Open http://localhost:3000.
 
 ### Demo mode (default — zero config)
-If the Supabase env vars are missing or left as the example placeholders, Cipher runs
-in **fully-local demo mode**: seeded users/posts/stories/chats, **real libsodium
-encryption** in your browser, mock realtime (typing, replies, receipts) and state
-persisted to `localStorage`. Just `npm run dev` and explore.
+If the Supabase env vars are missing or left as the example placeholders, Cipher runs in
+**fully-local demo mode**: seeded users/posts/moments/chats, **real libsodium encryption**
+in your browser, mock realtime, and state persisted to `localStorage`. Just `npm run dev`.
 
 ### Connecting Supabase (production)
 1. Create a project at [supabase.com](https://supabase.com).
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor (tables, RLS, realtime, new-user trigger).
-   - If you ran an **early** copy of the schema, also run [`supabase/fix-rls.sql`](supabase/fix-rls.sql) — it installs recursion-safe conversation policies, the INSERT/UPDATE policies needed to create chats, the realtime publication, and the storage buckets.
-3. **Auth** → Providers → Email: for the smoothest demo, turn **off** "Confirm email" (otherwise new accounts must confirm via the link, handled at `/auth/callback`).
-4. Create the storage buckets `avatars`, `posts`, `stories` (public) — `fix-rls.sql` does this for you.
-5. Put your keys in `.env.local` (both required):
+2. Run the SQL files in the editor, in order:
+   - [`supabase/schema.sql`](supabase/schema.sql) — tables, RLS, realtime, new-user trigger
+   - [`supabase/fix-rls.sql`](supabase/fix-rls.sql) — recursion-safe conversation policies, chat
+     INSERT/UPDATE policies, realtime publication, **storage buckets**
+   - [`supabase/keys-migration.sql`](supabase/keys-migration.sql) — portable-key columns
+   - [`supabase/settings-migration.sql`](supabase/settings-migration.sql) — private flag + blocks
+   - [`supabase/moments-migration.sql`](supabase/moments-migration.sql) — text/voice moments
+   - [`supabase/groups-migration.sql`](supabase/groups-migration.sql) — leave/remove member policy
+3. **Auth → Email:** turn **off** "Confirm email" for the smoothest flow (otherwise new
+   accounts confirm via the link, handled at `/auth/callback`).
+4. Add your keys to `.env.local` (both required — use the **anon public** key, never the service role):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
-6. Restart the dev server — Cipher switches off demo mode automatically. Sign up creates
-   a profile (via DB trigger) and generates your on-device key pair.
-
-> **Note:** the private key lives only in the browser's `localStorage`. Signing in on a
-> new device generates a fresh key pair and republishes the public key, so messages sealed
-> to the old key won't be readable there — expected for this demo's key model.
+5. Restart — Cipher leaves demo mode automatically. Sign-up creates a profile (DB trigger),
+   generates your key pair, and stores the password-wrapped copy for multi-device recovery.
 
 ---
 
 ## ☁️ Deploy to Vercel
 
 ```bash
-vercel
+vercel --prod
 ```
 
-Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in the Vercel
-project's Environment Variables (or omit them to ship the demo). The app is
-deploy-ready as-is.
+Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in the project's
+Environment Variables (or omit them to ship the demo). Deploy-ready as-is.
+
+> **Build note:** the published `libsodium-wrappers` ESM build has a broken relative import;
+> [`next.config.mjs`](next.config.mjs) aliases it to the CommonJS build to fix it.
 
 ---
 
@@ -108,17 +132,19 @@ deploy-ready as-is.
 
 ```
 app/
-  (app)/              # authenticated shell (sidebar + bottom nav)
-    feed/  messages/  discover/  notifications/  profile/  u/[username]/
-  login/  page.tsx    # landing + auth
+  (app)/              # authenticated shell + page transitions
+    feed/  messages/  discover/(Pulse)  notifications/  profile/  settings/  u/[username]/
+  auth/callback/  login/  page.tsx      # landing + real auth
 components/
-  chat/   post/   story/   profile/   shell/   ui/
+  chat/  feed/  post/  story/  profile/  shell/  ui/
 lib/
-  crypto.ts           # libsodium E2EE
-  store.tsx           # client data layer (demo mode) + actions
-  supabase/           # browser + server clients
-  demo-data.ts  types.ts  utils.ts  config.ts  nav.ts
-supabase/schema.sql   # full Postgres schema + RLS + realtime
+  crypto.ts           # libsodium E2EE + password-wrapped keys
+  keys.ts use-recorder.ts
+  store.tsx           # demo provider (localStorage)
+  store-supabase.tsx  # live provider (DB · realtime · presence · storage)
+  app-context.ts      # shared context interface
+  supabase/           # clients + db queries/mutations + storage
+supabase/*.sql        # schema + ordered migrations
 ```
 
 ## 🛠️ Tech
@@ -127,5 +153,6 @@ libsodium-wrappers · Supabase · lucide-react
 
 ---
 
-*Cipher is a portfolio demo. The cryptographic design demonstrates a real sealed-key
-E2EE model; audit and harden key storage/rotation before any production use.*
+*Cipher is a portfolio project. The cryptographic design demonstrates a real sealed-key,
+password-portable E2EE model; audit and harden key management (and tighten profile RLS for
+true anti-enumeration) before any production use.*

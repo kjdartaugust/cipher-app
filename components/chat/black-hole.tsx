@@ -10,9 +10,9 @@ const DONUT = 'radial-gradient(closest-side, transparent 38%, #000 43%, #000 88%
 
 export function BlackHole({ size, count }: { size: number; count: number }) {
   return (
-    <div className="relative grid place-items-center" style={{ width: size, height: size, perspective: size * 2.2, contain: 'layout paint' }}>
-      {/* inclined, spinning disk */}
-      <div className="absolute inset-0 grid place-items-center" style={{ transform: 'rotateX(70deg)', transformStyle: 'preserve-3d' }}>
+    <div className="relative grid place-items-center" style={{ width: size, height: size, contain: 'layout paint' }}>
+      {/* inclined, spinning disk (flat scaleY squash — zoom-stable) */}
+      <div className="absolute inset-0 grid place-items-center" style={{ transform: 'scaleY(0.34)' }}>
         <div className="absolute inset-0 rounded-full opacity-40 blur-2xl" style={{ background: DISK }} />
         <motion.div
           animate={{ rotate: 360 }}

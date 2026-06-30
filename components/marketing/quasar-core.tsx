@@ -18,7 +18,7 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
     <div
       aria-hidden
       className={cn('pointer-events-none relative grid place-items-center', className)}
-      style={{ width: size, height: size, perspective: 1100, contain: 'layout paint' }}
+      style={{ width: size, height: size, contain: 'layout paint' }}
     >
       {/* ── polar jets (perpendicular to the disk) ── */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -27,8 +27,8 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
         <div className="absolute left-1/2 -translate-x-1/2 bg-gradient-to-b from-white/70 via-magenta-300/40 to-transparent blur-[1px]" style={{ width: 3, height: size * 0.7 }} />
       </div>
 
-      {/* ── inclined accretion disk ── */}
-      <div className="absolute inset-0 grid place-items-center" style={{ transform: 'rotateX(74deg)', transformStyle: 'preserve-3d' }}>
+      {/* ── inclined accretion disk (flat scaleY squash — zoom-stable) ── */}
+      <div className="absolute inset-0 grid place-items-center" style={{ transform: 'scaleY(0.3)' }}>
         {/* soft outer halo */}
         <div className="absolute rounded-full opacity-40 blur-3xl" style={{ width: size, height: size, background: disk }} />
         {/* main rotating disk */}

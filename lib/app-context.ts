@@ -53,6 +53,12 @@ export interface AppContextValue extends AppState {
   markConversationRead: (conversationId: string) => void;
   startTyping: (conversationId: string) => void;
   createConversation: (memberIds: string[], name?: string) => Promise<string>;
+  // group management
+  renameGroup: (conversationId: string, name: string) => Promise<void>;
+  setGroupAvatar: (conversationId: string, url: string) => Promise<void>;
+  addGroupMembers: (conversationId: string, userIds: string[]) => Promise<void>;
+  removeGroupMember: (conversationId: string, userId: string) => Promise<void>;
+  leaveGroup: (conversationId: string) => Promise<void>;
   decryptedFor: (conversationId: string) => Message[];
   // notifications
   markAllNotificationsRead: () => void;

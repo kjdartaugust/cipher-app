@@ -562,6 +562,42 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     markConversationRead,
     startTyping,
     createConversation,
+    renameGroup: async (id, name) => {
+      setState((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, name } : c)) }));
+    },
+    setGroupAvatar: async (id, url) => {
+      setState((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, avatar: url } : c)) }));
+    },
+    addGroupMembers: async (id, userIds) => {
+      const ck = await unwrap(id);
+      for (const m of userIds) {
+        if (!keys.current.pairs[m]) keys.current.pairs[m] = await generateKeyPair();
+        keys.current.sealed[id] = {
+          ...keys.current.sealed[id],
+          [m]: await sealKeyForMember(ck, keys.current.pairs[m].publicKey),
+        };
+      }
+      localStorage.setItem(LS_KEYS, JSON.stringify(keys.current));
+      setState((s) => ({
+        ...s,
+        conversations: s.conversations.map((c) =>
+          c.id === id ? { ...c, memberIds: Array.from(new Set([...c.memberIds, ...userIds])) } : c
+        ),
+      }));
+    },
+    removeGroupMember: async (id, userId) => {
+      if (keys.current.sealed[id]) delete keys.current.sealed[id][userId];
+      localStorage.setItem(LS_KEYS, JSON.stringify(keys.current));
+      setState((s) => ({
+        ...s,
+        conversations: s.conversations.map((c) =>
+          c.id === id ? { ...c, memberIds: c.memberIds.filter((m) => m !== userId) } : c
+        ),
+      }));
+    },
+    leaveGroup: async (id) => {
+      setState((s) => ({ ...s, conversations: s.conversations.filter((c) => c.id !== id) }));
+    },
     decryptedFor,
     markAllNotificationsRead,
     userById,

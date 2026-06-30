@@ -6,11 +6,13 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Phone, ShieldCheck, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { CipherBadge } from '@/components/ui/cipher-badge';
+import { GroupPanel } from './group-panel';
 import { MessageBubble } from './message-bubble';
 import { MessageComposer } from './message-composer';
 import { useConversationMeta } from './chat-helpers';
 import { useApp } from '@/lib/store';
 import { keyFingerprint } from '@/lib/crypto';
+import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 
 export function ChatThread({ conversationId }: { conversationId: string }) {
@@ -19,6 +21,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [fingerprint, setFingerprint] = useState('');
   const [showSafety, setShowSafety] = useState(false);
+  const [showGroup, setShowGroup] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const meta = useConversationMeta(conv ?? ({ id: '', isGroup: false, memberIds: [me.id], createdAt: 0, lastMessageAt: 0 } as any));
@@ -63,16 +66,21 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
         <Link href="/messages" className="rounded-full p-1.5 hover:bg-white/10 lg:hidden">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <Avatar src={meta.avatar ?? ''} alt={meta.title} size={42} online={meta.online} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{meta.title}</p>
-          <div className="flex items-center gap-2">
-            <p className="truncate text-xs text-white/45">
-              {isTyping ? <span className="text-cipher-300">typing…</span> : meta.subtitle}
-            </p>
-            <CipherBadge className="hidden sm:inline-flex" />
+        <button
+          onClick={() => conv.isGroup && setShowGroup(true)}
+          className={cn('flex min-w-0 flex-1 items-center gap-3 text-left', conv.isGroup && 'transition hover:opacity-80')}
+        >
+          <Avatar src={meta.avatar ?? ''} alt={meta.title} size={42} online={meta.online} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold">{meta.title}</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-xs text-white/45">
+                {isTyping ? <span className="text-cipher-300">typing…</span> : conv.isGroup ? 'Tap for group info' : meta.subtitle}
+              </p>
+              <CipherBadge className="hidden sm:inline-flex" />
+            </div>
           </div>
-        </div>
+        </button>
         <button className="rounded-full p-2 text-white/50 hover:bg-white/10"><Phone className="h-5 w-5" /></button>
         <button className="rounded-full p-2 text-white/50 hover:bg-white/10"><Video className="h-5 w-5" /></button>
         <button onClick={() => setShowSafety((s) => !s)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
@@ -137,6 +145,8 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
       </div>
 
       <MessageComposer conversationId={conversationId} replyTo={replyTo} onClearReply={() => setReplyTo(null)} />
+
+      {conv.isGroup && <GroupPanel conv={conv} open={showGroup} onClose={() => setShowGroup(false)} />}
     </div>
   );
 }

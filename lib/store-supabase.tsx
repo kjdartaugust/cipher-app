@@ -515,6 +515,56 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return convId;
   }, [state.conversations]);
 
+  const renameGroup = useCallback(async (id: string, name: string) => {
+    setState((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, name } : c)) }));
+    const { error } = await db.updateConversation(supa(), id, { name });
+    if (error) throw new Error(error.message);
+  }, []);
+
+  const setGroupAvatar = useCallback(async (id: string, url: string) => {
+    setState((s) => ({ ...s, conversations: s.conversations.map((c) => (c.id === id ? { ...c, avatar: url } : c)) }));
+    const { error } = await db.updateConversation(supa(), id, { avatar: url });
+    if (error) throw new Error(error.message);
+  }, []);
+
+  const addGroupMembers = useCallback(async (id: string, userIds: string[]) => {
+    // Seal the existing conversation key for each new member's public key.
+    const ck = await unwrap(id);
+    const { data: keys, error: keyErr } = await db.publicKeys(supa(), userIds);
+    if (keyErr) throw new Error(keyErr.message);
+    const rows: { conversation_id: string; user_id: string; sealed_key: string }[] = [];
+    for (const uid of userIds) {
+      const pk = (keys ?? []).find((k: any) => k.id === uid)?.public_key;
+      if (!pk) throw new Error('A selected member has not set up encryption keys yet.');
+      rows.push({ conversation_id: id, user_id: uid, sealed_key: await sealKeyForMember(ck, pk) });
+    }
+    const { error } = await db.insertMembers(supa(), rows);
+    if (error) throw new Error(error.message);
+    setState((s) => ({
+      ...s,
+      conversations: s.conversations.map((c) =>
+        c.id === id ? { ...c, memberIds: Array.from(new Set([...c.memberIds, ...userIds])) } : c
+      ),
+    }));
+  }, [unwrap]);
+
+  const removeGroupMember = useCallback(async (id: string, userId: string) => {
+    setState((s) => ({
+      ...s,
+      conversations: s.conversations.map((c) =>
+        c.id === id ? { ...c, memberIds: c.memberIds.filter((m) => m !== userId) } : c
+      ),
+    }));
+    const { error } = await db.removeMember(supa(), id, userId);
+    if (error) throw new Error(error.message);
+  }, []);
+
+  const leaveGroup = useCallback(async (id: string) => {
+    convIdsRef.current = convIdsRef.current.filter((c) => c !== id);
+    setState((s) => ({ ...s, conversations: s.conversations.filter((c) => c.id !== id) }));
+    await db.removeMember(supa(), id, mine());
+  }, []);
+
   const markAllNotificationsRead = useCallback(() => {
     setState((s) => ({ ...s, notifications: s.notifications.map((n) => ({ ...n, read: true })) }));
     db.markNotifRead(supa(), mine());
@@ -611,6 +661,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     toggleLike, toggleSave, sharePost, addComment, createPost, toggleFollow,
     viewStory, createMoment, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
+    renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup,
     markAllNotificationsRead, userById, updateProfile, unlock,
     toggleBlock, setPrivacy, changePassword, deleteAccount, myFingerprint, signOut,
     presence, setChatting,

@@ -216,6 +216,10 @@ export const db = {
     s.from('conversations').insert({ id: row.id, is_group: row.is_group, name: row.name ?? null }),
   insertMembers: (s: DB, rows: { conversation_id: string; user_id: string; sealed_key: string }[]) =>
     s.from('conversation_members').insert(rows),
+  updateConversation: (s: DB, id: string, patch: { name?: string; avatar?: string }) =>
+    s.from('conversations').update(patch).eq('id', id),
+  removeMember: (s: DB, conversationId: string, userId: string) =>
+    s.from('conversation_members').delete().match({ conversation_id: conversationId, user_id: userId }),
 
   insertMessage: (
     s: DB,

@@ -31,6 +31,7 @@ export function lastMessagePreview(
 ): string {
   if (!last) return 'No messages yet';
   if (last.deleted) return 'Message deleted';
+  if (last.kind === 'call') return `📞 ${last.plaintext ?? 'Call'}`;
   if (last.kind === 'voice') return '🎤 Voice message';
   if (last.kind === 'image') return '📷 Photo';
   if (last.kind === 'file') return `📎 ${last.meta?.fileName ?? 'File'}`;

@@ -18,6 +18,7 @@ import {
   wrapPrivateKey,
 } from './crypto';
 import { loadKeyPair, storeKeyPair } from './keys';
+import { callSummary } from './utils';
 import type { KeyPair } from './crypto';
 import type { Message, MessageKind, Post, User } from './types';
 import { useApp } from './app-context';
@@ -466,6 +467,34 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     );
   }, [unwrap, state.conversations]);
 
+  const logCall = useCallback(async (conversationId: string, callKind: 'voice' | 'video', durationSec: number | null) => {
+    const text = callSummary(callKind, durationSec);
+    const key = await unwrap(conversationId);
+    const enc = await encryptMessage(text, key);
+    const { data } = await db.insertMessage(supa(), {
+      conversation_id: conversationId, sender_id: mine(), kind: 'call',
+      ciphertext: enc.ciphertext, nonce: enc.nonce, meta: { callKind, duration: durationSec ?? null },
+    });
+    if (data) {
+      setState((s) => ({
+        ...s,
+        messages: [...s.messages, {
+          id: data.id, conversationId, senderId: mine(), kind: 'call', encrypted: enc, plaintext: text,
+          meta: { callKind, duration: durationSec ?? undefined }, createdAt: Date.now(),
+          reactions: [], deliveredTo: [mine()], readBy: [mine()],
+        }],
+      }));
+    }
+    db.touchConversation(supa(), conversationId);
+    // notify the other member(s) only when they missed it
+    if (durationSec === null) {
+      const conv = state.conversations.find((c) => c.id === conversationId);
+      conv?.memberIds.filter((id) => id !== mine()).forEach((id) =>
+        db.notify(supa(), { user_id: id, actor_id: mine(), type: 'message', target_id: conversationId, preview: `📞 ${text}` })
+      );
+    }
+  }, [unwrap, state.conversations]);
+
   const reactToMessage = useCallback((messageId: string, emoji: string) => {
     const msg = state.messages.find((m) => m.id === messageId);
     const existing = msg?.reactions.find((r) => r.userId === mine());
@@ -677,7 +706,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextValue = {
     ...state, me, ready, typing, needsUnlock, blocked,
     toggleLike, toggleSave, sharePost, addComment, createPost, deletePost, editPost, toggleFollow,
-    viewStory, createMoment, sendMessage, reactToMessage, editMessage, deleteMessage,
+    viewStory, createMoment, sendMessage, logCall, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
     renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup,
     markAllNotificationsRead, userById, updateProfile, unlock,

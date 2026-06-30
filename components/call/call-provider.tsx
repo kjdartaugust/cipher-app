@@ -45,7 +45,7 @@ const ICE: RTCConfiguration = {
 };
 
 export function CallProvider({ children }: { children: React.ReactNode }) {
-  const { me, conversations } = useApp();
+  const { me, conversations, logCall } = useApp();
   const [state, setState] = useState<CallState>('idle');
   const [call, setCall] = useState<ActiveCall | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -60,6 +60,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const localRef = useRef<MediaStream | null>(null);
   const callRef = useRef<ActiveCall | null>(null);
   callRef.current = call;
+  const isCaller = useRef(false);
+  const connectedAt = useRef(0);
+  const concluded = useRef(false);
+
+  // Only the caller posts the call record (avoids duplicates).
+  const conclude = useCallback(() => {
+    if (!isCaller.current || concluded.current) return;
+    const c = callRef.current;
+    if (!c) return;
+    concluded.current = true;
+    const dur = connectedAt.current ? Math.round((Date.now() - connectedAt.current) / 1000) : null;
+    logCall(c.convId, c.video ? 'video' : 'voice', dur);
+  }, [logCall]);
 
   const send = useCallback((convId: string, payload: Record<string, unknown>) => {
     channels.current[convId]?.send({ type: 'broadcast', event: 'signal', payload: { ...payload, from: me.id } });
@@ -132,17 +145,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   async function handleSignal(convId: string, p: any) {
     if (p.kind === 'offer') {
       if (callRef.current) { send(convId, { kind: 'busy' }); return; }
+      isCaller.current = false;
+      concluded.current = false;
+      connectedAt.current = 0;
       setCall({ convId, peerId: p.from, peerName: p.fromName ?? 'Someone', video: !!p.video, offer: p.sdp });
       setState('incoming');
     } else if (p.kind === 'answer') {
       await pc.current?.setRemoteDescription(new RTCSessionDescription(p.sdp));
       for (const c of pendingIce.current) await pc.current?.addIceCandidate(c).catch(() => {});
       pendingIce.current = [];
+      connectedAt.current = Date.now();
       setState('connected');
     } else if (p.kind === 'ice') {
       if (pc.current?.remoteDescription) await pc.current.addIceCandidate(p.candidate).catch(() => {});
       else pendingIce.current.push(p.candidate);
     } else if (p.kind === 'hangup' || p.kind === 'decline' || p.kind === 'busy') {
+      conclude();
       cleanup();
     }
   }
@@ -151,6 +169,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!sb.current) { alert('Calling requires the live app (Supabase mode).'); return; }
     if (callRef.current) return;
     try {
+      isCaller.current = true;
+      concluded.current = false;
+      connectedAt.current = 0;
       setCall({ convId, peerId, peerName, video });
       setState('outgoing');
       const stream = await getMedia(video);
@@ -178,6 +199,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
       send(c.convId, { kind: 'answer', sdp: answer });
+      connectedAt.current = Date.now();
       setState('connected');
     } catch {
       alert('Could not access your microphone/camera.');
@@ -193,8 +215,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const hangup = useCallback(() => {
     if (callRef.current) send(callRef.current.convId, { kind: 'hangup' });
+    conclude();
     cleanup();
-  }, [send, cleanup]);
+  }, [send, cleanup, conclude]);
 
   const toggleMute = useCallback(() => {
     const t = localRef.current?.getAudioTracks()[0];

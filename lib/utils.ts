@@ -31,3 +31,10 @@ export function compactNumber(n: number): string {
 export function storyProgress(createdAt: number, expiresAt: number): number {
   return Math.min(1, Math.max(0, (Date.now() - createdAt) / (expiresAt - createdAt)));
 }
+
+export function callSummary(callKind: 'voice' | 'video', durationSec: number | null): string {
+  const label = callKind === 'video' ? 'Video' : 'Voice';
+  if (durationSec === null) return `Missed ${label.toLowerCase()} call`;
+  const mmss = `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}`;
+  return `${label} call · ${mmss}`;
+}

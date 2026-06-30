@@ -50,6 +50,8 @@ export interface AppContextValue extends AppState {
     replyTo?: string
   ) => Promise<void>;
   reactToMessage: (messageId: string, emoji: string) => void;
+  // posts a call record into the conversation (durationSec null = missed)
+  logCall: (conversationId: string, callKind: 'voice' | 'video', durationSec: number | null) => void;
   editMessage: (messageId: string, text: string) => Promise<void>;
   deleteMessage: (messageId: string) => void;
   markConversationRead: (conversationId: string) => void;

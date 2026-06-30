@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, CheckCheck, CornerUpLeft, Download, Lock, Pencil, Smile, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, CornerUpLeft, Download, Lock, Pencil, Phone, Smile, Trash2, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VoiceNote } from './voice-note';
 import { useApp } from '@/lib/store';
@@ -44,6 +44,21 @@ export function MessageBubble({
           message unsent
         </div>
       </Wrap>
+    );
+  }
+
+  // call records render as a centered system pill
+  if (message.kind === 'call') {
+    const missed = message.meta?.duration === undefined || message.meta?.duration === null;
+    const video = message.meta?.callKind === 'video';
+    return (
+      <div className="my-1 flex justify-center px-3">
+        <span className={cn('inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs', missed ? 'border-rose-500/30 bg-rose-500/10 text-rose-300' : 'border-white/10 bg-white/5 text-white/55')}>
+          {video ? <Video className="h-3.5 w-3.5" /> : <Phone className="h-3.5 w-3.5" />}
+          {message.plaintext || 'Call'}
+          <span className="text-white/30">· {clockTime(message.createdAt)}</span>
+        </span>
+      </div>
     );
   }
 

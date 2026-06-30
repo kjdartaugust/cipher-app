@@ -17,6 +17,7 @@ import {
   openSealedKey,
   sealKeyForMember,
 } from './crypto';
+import { callSummary } from './utils';
 import {
   DEMO_CONVERSATIONS,
   DEMO_NOTIFICATIONS,
@@ -566,6 +567,24 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
       }));
     },
     sendMessage,
+    logCall: async (conversationId, callKind, durationSec) => {
+      const text = callSummary(callKind, durationSec);
+      const conv = state.conversations.find((c) => c.id === conversationId);
+      if (!conv) return;
+      const ck = await unwrap(conversationId);
+      const encrypted = await encryptMessage(text, ck);
+      setState((s) => ({
+        ...s,
+        messages: [
+          ...s.messages,
+          {
+            id: uid('m'), conversationId, senderId: ME_ID, kind: 'call', encrypted, plaintext: text,
+            meta: { callKind, duration: durationSec ?? undefined }, createdAt: Date.now(),
+            reactions: [], deliveredTo: conv.memberIds, readBy: [ME_ID],
+          },
+        ],
+      }));
+    },
     reactToMessage,
     editMessage,
     deleteMessage,

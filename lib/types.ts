@@ -50,7 +50,7 @@ export interface Story {
   highlighted?: boolean;
 }
 
-export type MessageKind = 'text' | 'image' | 'file' | 'voice';
+export type MessageKind = 'text' | 'image' | 'file' | 'voice' | 'call';
 
 export interface EncryptedPayload {
   // base64 ciphertext + nonce produced by libsodium crypto_box / secretbox
@@ -67,7 +67,7 @@ export interface Message {
   encrypted: EncryptedPayload;
   // Decrypted client-side at runtime; never sent to the server.
   plaintext?: string;
-  meta?: { fileName?: string; duration?: number; mime?: string };
+  meta?: { fileName?: string; duration?: number; mime?: string; callKind?: 'voice' | 'video' };
   createdAt: number;
   editedAt?: number;
   deleted?: boolean;

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   Bell,
   Compass,
@@ -21,8 +21,23 @@ const float = (delay: number) => ({
 
 // A pixel-accurate, animated mock of Cipher — no image assets, pure markup.
 export function AppPreview() {
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [10, -10]), { stiffness: 150, damping: 18 });
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [-10, 10]), { stiffness: 150, damping: 18 });
+
+  function onMove(e: React.MouseEvent) {
+    const r = e.currentTarget.getBoundingClientRect();
+    mx.set((e.clientX - r.left) / r.width - 0.5);
+    my.set((e.clientY - r.top) / r.height - 0.5);
+  }
+  function onLeave() {
+    mx.set(0);
+    my.set(0);
+  }
+
   return (
-    <div className="relative mx-auto flex max-w-md justify-center px-6 pb-24">
+    <div className="relative mx-auto flex max-w-md justify-center px-6 pb-24" onMouseMove={onMove} onMouseLeave={onLeave}>
       {/* soft violet halo */}
       <div className="pointer-events-none absolute inset-x-10 top-10 -z-10 h-72 rounded-full bg-violet-600/20 blur-[90px]" />
 
@@ -32,6 +47,7 @@ export function AppPreview() {
         whileInView={{ opacity: 1, y: 0, rotate: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{ rotateX, rotateY, transformPerspective: 900 }}
         className="relative w-[300px] rounded-[2.4rem] border border-white/15 bg-black p-2 shadow-2xl shadow-violet-900/30"
       >
         <div className="overflow-hidden rounded-[1.9rem] border border-white/10 bg-black">

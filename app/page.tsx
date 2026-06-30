@@ -15,6 +15,7 @@ import {
 import { Logo } from '@/components/ui/logo';
 import { AppPreview } from '@/components/marketing/app-preview';
 import { Showcase } from '@/components/marketing/showcase';
+import { DecryptText } from '@/components/marketing/decrypt-text';
 
 const features = [
   { icon: Lock, title: 'Messages only you can read', body: 'Every DM and group chat is encrypted on your device with libsodium. The server only ever holds ciphertext.' },
@@ -31,6 +32,20 @@ const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transiti
 export default function Landing() {
   return (
     <main className="relative overflow-hidden">
+      {/* drifting ambient glow */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 left-1/4 -z-10 h-[420px] w-[420px] rounded-full bg-violet-700/20 blur-[120px]"
+        animate={{ x: [0, 60, -20, 0], y: [0, 40, 10, 0] }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -top-10 right-1/4 -z-10 h-[360px] w-[360px] rounded-full bg-fuchsia-700/15 blur-[120px]"
+        animate={{ x: [0, -50, 20, 0], y: [0, 30, -10, 0] }}
+        transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
       {/* nav */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo size="md" />
@@ -50,7 +65,7 @@ export default function Landing() {
 
           <motion.h1 variants={item} className="headline text-balance text-6xl leading-[0.95] sm:text-8xl">
             A private club for the<br className="hidden sm:block" /> people you{' '}
-            <span className="text-violet-500">actually trust</span>.
+            <DecryptText text="actually trust" className="text-violet-500" />.
           </motion.h1>
 
           <motion.p variants={item} className="mx-auto mt-7 max-w-xl text-balance text-lg text-white/55">
@@ -125,7 +140,7 @@ export default function Landing() {
             </pre>
             <div className="mt-4 text-violet-400">// what your circle reads</div>
             <div className="mt-2 rounded-lg border border-violet-600/30 bg-violet-600/10 px-3 py-2 text-soft">
-              “Pushed the crypto module, please review 🙏”
+              “<DecryptText text="pushed the crypto module, please review" />”
             </div>
           </div>
         </div>

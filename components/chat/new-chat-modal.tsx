@@ -16,9 +16,13 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const candidates = users.filter(
-    (u) => u.id !== me.id && !blocked.includes(u.id) && u.name.toLowerCase().includes(query.toLowerCase())
-  );
+  // Default to your connections; reveal anyone else only by searching a username.
+  const q = query.trim().toLowerCase();
+  const candidates = users.filter((u) => {
+    if (u.id === me.id || blocked.includes(u.id)) return false;
+    if (q.length >= 2) return u.username.toLowerCase().includes(q) || u.name.toLowerCase().includes(q);
+    return me.following.includes(u.id) || u.followers.includes(me.id);
+  });
 
   function toggle(id: string) {
     setSelected((s) => (s.includes(id) ? s.filter((i) => i !== id) : [...s, id]));
@@ -75,10 +79,15 @@ export function NewChatModal({ open, onClose }: { open: boolean; onClose: () => 
 
             <div className="relative mb-3">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search people" className="input pl-11" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Your circle, or search a username" className="input pl-11" />
             </div>
 
             <div className="-mx-1 flex-1 overflow-y-auto">
+              {candidates.length === 0 && (
+                <p className="px-1 py-6 text-center text-xs text-white/40">
+                  {q.length >= 2 ? 'No one matches that username.' : 'Search a username to start a chat with someone new.'}
+                </p>
+              )}
               {candidates.map((u) => {
                 const on = selected.includes(u.id);
                 return (

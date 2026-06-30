@@ -2,19 +2,20 @@
 
 import Link from 'next/link';
 import { Search, ShieldCheck, TrendingUp } from 'lucide-react';
-import { Avatar } from '@/components/ui/avatar';
-import { VerifiedBadge } from '@/components/post/post-card';
 import { useApp } from '@/lib/store';
 import { compactNumber } from '@/lib/utils';
 
 export function RightRail() {
-  const { users, posts, me, toggleFollow } = useApp();
+  const { users, posts, me, blocked } = useApp();
 
-  const suggestions = users
-    .filter((u) => u.id !== me.id && !me.following.includes(u.id))
-    .slice(0, 3);
+  // Only your network — Cipher never suggests strangers.
+  const networkIds = new Set([
+    me.id,
+    ...users.filter((u) => me.following.includes(u.id) || u.followers.includes(me.id)).map((u) => u.id),
+  ]);
 
   const trending = [...posts]
+    .filter((p) => networkIds.has(p.authorId) && !blocked.includes(p.authorId))
     .sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0))
     .slice(0, 3);
 
@@ -25,47 +26,33 @@ export function RightRail() {
         <div className="input pl-11 text-white/40">Search Cipher</div>
       </Link>
 
-      <div className="card">
-        <h3 className="mb-3 flex items-center gap-2 font-semibold">
-          <TrendingUp className="h-4 w-4 text-cipher-400" /> Trending now
-        </h3>
-        <div className="space-y-3">
-          {trending.map((p, i) => {
-            const author = users.find((u) => u.id === p.authorId)!;
-            return (
-              <Link key={p.id} href="/discover" className="block">
-                <p className="text-xs text-white/40">#{i + 1} · {compactNumber(p.likes.length)} likes</p>
-                <p className="line-clamp-2 text-sm text-white/80">{p.text || `Post by @${author.username}`}</p>
-              </Link>
-            );
-          })}
+      {trending.length > 0 && (
+        <div className="card">
+          <h3 className="mb-3 flex items-center gap-2 font-semibold">
+            <TrendingUp className="h-4 w-4 text-cipher-400" /> Trending in your circle
+          </h3>
+          <div className="space-y-3">
+            {trending.map((p, i) => {
+              const author = users.find((u) => u.id === p.authorId)!;
+              return (
+                <Link key={p.id} href="/discover" className="block">
+                  <p className="text-xs text-white/40">#{i + 1} · {compactNumber(p.likes.length)} likes</p>
+                  <p className="line-clamp-2 text-sm text-white/80">{p.text || `Post by @${author.username}`}</p>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="card">
-        <h3 className="mb-3 font-semibold">Suggested for you</h3>
-        <div className="space-y-3">
-          {suggestions.map((u) => (
-            <div key={u.id} className="flex items-center gap-3">
-              <Link href={`/u/${u.username}`}>
-                <Avatar src={u.avatar} alt={u.name} size={40} />
-              </Link>
-              <div className="min-w-0 flex-1">
-                <Link href={`/u/${u.username}`} className="flex items-center gap-1">
-                  <span className="truncate text-sm font-medium hover:underline">{u.name}</span>
-                  {u.verified && <VerifiedBadge />}
-                </Link>
-                <p className="truncate text-xs text-white/40">@{u.username}</p>
-              </div>
-              <button
-                onClick={() => toggleFollow(u.id)}
-                className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold transition hover:bg-cipher-600"
-              >
-                Follow
-              </button>
-            </div>
-          ))}
-        </div>
+        <h3 className="mb-1 font-semibold">Private by default</h3>
+        <p className="text-xs text-white/50">
+          People can&apos;t browse you on Cipher. You&apos;re only discoverable to someone who knows your username.
+        </p>
+        <Link href="/discover" className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-cipher-300">
+          <Search className="h-3.5 w-3.5" /> Find someone by username
+        </Link>
       </div>
 
       <div className="flex items-center gap-2 px-2 text-xs text-white/30">

@@ -43,20 +43,31 @@ export default function PulsePage() {
     [users, me.id, blocked]
   );
 
-  const results = query.trim()
-    ? people.filter((u) => (u.name + u.username).toLowerCase().includes(query.toLowerCase()))
+  // Your connections = people you follow, or who follow you. Only these are
+  // browsable; everyone else is reachable solely by searching their username.
+  const connections = useMemo(
+    () => people.filter((u) => me.following.includes(u.id) || u.followers.includes(me.id)),
+    [people, me.following, me.id]
+  );
+
+  // Search is the only way to discover new people — match by username (or name).
+  const q = query.trim().toLowerCase();
+  const results = q.length >= 2
+    ? people.filter((u) => u.username.toLowerCase().includes(q) || u.name.toLowerCase().includes(q))
     : [];
 
   const rank = (u: User) => (presence[u.id] ? 2 : liveMode ? 0 : u.online ? 1 : 0);
   const live = useMemo(
-    () => [...people].sort((a, b) => rank(b) - rank(a)),
+    () => [...connections].sort((a, b) => rank(b) - rank(a)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [people, presence]
+    [connections, presence]
   );
 
+  // Trending is limited to your network so Pulse never surfaces strangers.
+  const networkIds = useMemo(() => new Set([me.id, ...connections.map((u) => u.id)]), [me.id, connections]);
   const trending = useMemo(
-    () => [...posts].sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0)).slice(0, 4),
-    [posts]
+    () => posts.filter((p) => networkIds.has(p.authorId)).sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0)).slice(0, 4),
+    [posts, networkIds]
   );
 
   const latestPost = (id: string) => posts.filter((p) => p.authorId === id).sort((a, b) => b.createdAt - a.createdAt)[0];
@@ -66,24 +77,30 @@ export default function PulsePage() {
       <PageHeader kicker="Live" title="Pulse" />
 
       <div className="p-5 sm:p-8">
-        <div className="relative mb-7">
+        <div className="relative mb-2">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find people on Cipher" className="input pl-11" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a username to connect" className="input pl-11" />
         </div>
+        <p className="mb-7 px-1 text-xs text-white/35">People aren&apos;t public on Cipher — you can only find someone by their username.</p>
 
         {query.trim() ? (
           <div className="space-y-1">
-            <p className="kicker mb-2">{results.length} result{results.length !== 1 && 's'}</p>
+            <p className="kicker mb-2">{q.length < 2 ? 'Keep typing a username…' : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
             {results.map((u) => (
               <PersonRow key={u.id} u={u} following={me.following.includes(u.id)} onFollow={() => toggleFollow(u.id)} presence={presenceOf(u)} />
             ))}
-            {results.length === 0 && <p className="py-8 text-center text-sm text-white/40">No one found.</p>}
+            {q.length >= 2 && results.length === 0 && <p className="py-8 text-center text-sm text-white/40">No one matches that username.</p>}
           </div>
         ) : (
           <>
-            {/* live presence grid */}
+            {/* live presence grid — your connections only */}
             <section className="mb-9">
-              <p className="kicker mb-4">Right now</p>
+              <p className="kicker mb-4">Your circle · right now</p>
+              {live.length === 0 && (
+                <p className="rounded-2xl border border-white/10 bg-surface/40 px-4 py-8 text-center text-sm text-white/40">
+                  No connections yet. Search a username above to add someone.
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {live.map((u) => {
                   const presence = presenceOf(u);
@@ -117,34 +134,26 @@ export default function PulsePage() {
               </div>
             </section>
 
-            {/* trending */}
-            <section className="mb-9">
-              <p className="kicker mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-violet-400" /> Trending in the club</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {trending.map((p, i) => {
-                  const a = users.find((u) => u.id === p.authorId)!;
-                  return (
-                    <Link key={p.id} href={`/u/${a.username}`} className="group relative aspect-square overflow-hidden rounded-xl bg-surface">
-                      {p.media?.[0]
-                        ? // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.media[0].url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-                        : <div className="flex h-full items-center p-2 text-xs text-white/70">{p.text}</div>}
-                      <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-violet-300">#{i + 1}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* suggested */}
-            <section>
-              <p className="kicker mb-3">People to add</p>
-              <div className="space-y-1">
-                {people.filter((u) => !me.following.includes(u.id)).map((u) => (
-                  <PersonRow key={u.id} u={u} following={false} onFollow={() => toggleFollow(u.id)} presence={presenceOf(u)} />
-                ))}
-              </div>
-            </section>
+            {/* trending — limited to your network */}
+            {trending.length > 0 && (
+              <section>
+                <p className="kicker mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-violet-400" /> Trending in your circle</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {trending.map((p, i) => {
+                    const a = users.find((u) => u.id === p.authorId)!;
+                    return (
+                      <Link key={p.id} href={`/u/${a.username}`} className="group relative aspect-square overflow-hidden rounded-xl bg-surface">
+                        {p.media?.[0]
+                          ? // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.media[0].url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                          : <div className="flex h-full items-center p-2 text-xs text-white/70">{p.text}</div>}
+                        <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-violet-300">#{i + 1}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>

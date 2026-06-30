@@ -13,12 +13,14 @@ import { MessageBubble } from './message-bubble';
 import { MessageComposer } from './message-composer';
 import { useConversationMeta } from './chat-helpers';
 import { useApp } from '@/lib/store';
+import { useCall } from '@/components/call/call-provider';
 import { keyFingerprint } from '@/lib/crypto';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 
 export function ChatThread({ conversationId }: { conversationId: string }) {
   const { conversations, me, typing, markConversationRead, userById, setChatting } = useApp();
+  const { startCall } = useCall();
   const conv = conversations.find((c) => c.id === conversationId);
   const router = useRouter();
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -94,8 +96,24 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
             </div>
           </div>
         </button>
-        <button className="hidden rounded-full p-2 text-white/50 hover:bg-white/10 sm:block"><Phone className="h-5 w-5" /></button>
-        <button className="hidden rounded-full p-2 text-white/50 hover:bg-white/10 sm:block"><Video className="h-5 w-5" /></button>
+        {!conv.isGroup && meta.others[0] && (
+          <>
+            <button
+              onClick={() => startCall(conversationId, meta.others[0].id, meta.others[0].name, false)}
+              className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white"
+              aria-label="Voice call"
+            >
+              <Phone className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => startCall(conversationId, meta.others[0].id, meta.others[0].name, true)}
+              className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white"
+              aria-label="Video call"
+            >
+              <Video className="h-5 w-5" />
+            </button>
+          </>
+        )}
         <button onClick={() => setShowSafety((s) => !s)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
           <ShieldCheck className="h-5 w-5" />
         </button>

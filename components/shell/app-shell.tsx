@@ -6,6 +6,8 @@ import { Sidebar } from './sidebar';
 import { BottomNav } from './bottom-nav';
 import { ComposeModal } from '@/components/post/compose-modal';
 import { UnlockModal } from '@/components/unlock-modal';
+import { CallProvider } from '@/components/call/call-provider';
+import { CallOverlay } from '@/components/call/call-overlay';
 import { Logo } from '@/components/ui/logo';
 import { FeedSkeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/lib/store';
@@ -34,14 +36,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ComposeCtx.Provider value={() => setComposeOpen(true)}>
-      <div className="mx-auto flex w-full max-w-7xl">
-        <Sidebar onCompose={() => setComposeOpen(true)} />
-        <main className="min-h-screen flex-1 pb-28 lg:pb-0">{children}</main>
-      </div>
-      <BottomNav />
-      <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
-      {needsUnlock && <UnlockModal />}
-    </ComposeCtx.Provider>
+    <CallProvider>
+      <ComposeCtx.Provider value={() => setComposeOpen(true)}>
+        <div className="mx-auto flex w-full max-w-7xl">
+          <Sidebar onCompose={() => setComposeOpen(true)} />
+          <main className="min-h-screen flex-1 pb-28 lg:pb-0">{children}</main>
+        </div>
+        <BottomNav />
+        <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
+        {needsUnlock && <UnlockModal />}
+        <CallOverlay />
+      </ComposeCtx.Provider>
+    </CallProvider>
   );
 }

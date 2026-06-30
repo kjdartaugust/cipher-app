@@ -67,7 +67,19 @@ export function EditProfileModal({ open, onClose }: { open: boolean; onClose: ()
             </div>
 
             <label className="mb-1 block text-xs text-white/50">Display name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="input mb-4" placeholder="Your name" />
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} className="input" placeholder="Your name" />
+            <div className="mb-4 mt-2 flex flex-wrap gap-1">
+              {['✨', '🔐', '🌙', '🔥', '💜', '🛰️', '⚡', '🎧', '✷', '👾'].map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => setName((n) => (n + e).slice(0, 40))}
+                  className="rounded-lg px-1.5 py-1 text-lg transition hover:bg-white/10"
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
 
             <label className="mb-1 block text-xs text-white/50">Bio</label>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="input resize-none" placeholder="Tell people about yourself" />

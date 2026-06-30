@@ -197,6 +197,7 @@ export const db = {
 
   insertComment: (s: DB, postId: string, authorId: string, text: string) =>
     s.from('comments').insert({ post_id: postId, author_id: authorId, text }).select().single(),
+  deletePost: (s: DB, postId: string) => s.from('posts').delete().eq('id', postId),
 
   like: (s: DB, postId: string, userId: string) => s.from('likes').insert({ post_id: postId, user_id: userId }),
   unlike: (s: DB, postId: string, userId: string) => s.from('likes').delete().match({ post_id: postId, user_id: userId }),

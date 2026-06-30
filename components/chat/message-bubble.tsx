@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, CheckCheck, CornerUpLeft, Lock, Pencil, Smile, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, CornerUpLeft, Download, Lock, Pencil, Smile, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VoiceNote } from './voice-note';
 import { useApp } from '@/lib/store';
@@ -102,8 +102,17 @@ export function MessageBubble({
           ) : message.kind === 'voice' ? (
             <VoiceNote duration={message.meta?.duration ?? 8} mine={mine} src={message.plaintext || undefined} />
           ) : message.kind === 'image' ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={message.plaintext} alt="" className="max-h-72 rounded-lg" />
+            <span className="group/img relative block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={message.plaintext} alt="" className="max-h-72 rounded-lg" />
+              <button
+                onClick={() => downloadImage(message.plaintext ?? '')}
+                title="Download"
+                className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white opacity-0 backdrop-blur transition group-hover/img:opacity-100"
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </span>
           ) : message.kind === 'file' ? (
             <a className="flex items-center gap-2 underline" href={message.plaintext || '#'} target="_blank" rel="noreferrer">
               📎 {message.meta?.fileName ?? 'file'}
@@ -209,6 +218,25 @@ function Wrap({
       {children}
     </motion.div>
   );
+}
+
+async function downloadImage(url: string) {
+  if (!url) return;
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = obj;
+    a.download = `cipher-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(obj);
+  } catch {
+    // cross-origin / offline — fall back to opening it
+    window.open(url, '_blank');
+  }
 }
 
 function IconBtn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {

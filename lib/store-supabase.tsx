@@ -196,7 +196,15 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         const seen = new Map(s.messages.map((m) => [m.id, m]));
         const merged = data.messages.map((m) => {
           const old = seen.get(m.id);
-          return old?.plaintext !== undefined ? { ...m, plaintext: old.plaintext } : m;
+          if (!old) return m;
+          // keep decrypted plaintext + don't lose optimistic read/delivered state
+          // (a receipt write may not have round-tripped yet)
+          return {
+            ...m,
+            plaintext: old.plaintext !== undefined ? old.plaintext : m.plaintext,
+            readBy: Array.from(new Set([...m.readBy, ...old.readBy])),
+            deliveredTo: Array.from(new Set([...m.deliveredTo, ...old.deliveredTo])),
+          };
         });
         for (const m of s.messages) if (!merged.some((x) => x.id === m.id)) merged.push(m);
         return { ...s, conversations: data.conversations, messages: merged };
@@ -363,6 +371,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       if (post && post.authorId !== mine()) db.notify(supa(), { user_id: post.authorId, actor_id: mine(), type: 'comment', target_id: postId, preview: `commented: ${text.slice(0, 40)}` });
     });
   }, [state.posts]);
+
+  const deletePost = useCallback((postId: string) => {
+    setState((s) => ({ ...s, posts: s.posts.filter((p) => p.id !== postId) }));
+    db.deletePost(supa(), postId);
+  }, []);
 
   const createPost = useCallback((text: string, media?: Post['media']) => {
     db.insertPost(supa(), { author_id: mine(), text, media }).then(({ data }) => {
@@ -658,7 +671,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextValue = {
     ...state, me, ready, typing, needsUnlock, blocked,
-    toggleLike, toggleSave, sharePost, addComment, createPost, toggleFollow,
+    toggleLike, toggleSave, sharePost, addComment, createPost, deletePost, toggleFollow,
     viewStory, createMoment, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
     renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup,

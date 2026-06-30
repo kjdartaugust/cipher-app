@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Phone, ShieldCheck, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
@@ -19,6 +20,7 @@ import type { Message } from '@/lib/types';
 export function ChatThread({ conversationId }: { conversationId: string }) {
   const { conversations, me, typing, markConversationRead, userById, setChatting } = useApp();
   const conv = conversations.find((c) => c.id === conversationId);
+  const router = useRouter();
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [fingerprint, setFingerprint] = useState('');
   const [showSafety, setShowSafety] = useState(false);
@@ -68,8 +70,11 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <button
-          onClick={() => conv.isGroup && setShowGroup(true)}
-          className={cn('flex min-w-0 flex-1 items-center gap-3 text-left', conv.isGroup && 'transition hover:opacity-80')}
+          onClick={() => {
+            if (conv.isGroup) setShowGroup(true);
+            else if (meta.others[0]) router.push(`/u/${meta.others[0].username}`);
+          }}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left transition hover:opacity-80"
         >
           <Avatar src={meta.avatar ?? ''} alt={meta.title} size={42} online={meta.online} />
           <div className="min-w-0 flex-1">

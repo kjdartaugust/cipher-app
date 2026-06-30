@@ -7,8 +7,10 @@ import {
   Bookmark,
   Heart,
   MessageCircle,
+  MoreHorizontal,
   Send,
   Share2,
+  Trash2,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { useApp } from '@/lib/store';
@@ -16,13 +18,15 @@ import type { Post } from '@/lib/types';
 import { cn, compactNumber, timeAgo } from '@/lib/utils';
 
 export function PostCard({ post, trending }: { post: Post; trending?: boolean }) {
-  const { userById, me, toggleLike, toggleSave, sharePost, addComment } = useApp();
+  const { userById, me, toggleLike, toggleSave, sharePost, addComment, deletePost } = useApp();
   const author = userById(post.authorId);
   const liked = post.likes.includes(me.id);
   const saved = post.saves.includes(me.id);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [burst, setBurst] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const mine = post.authorId === me.id;
 
   function like() {
     if (!liked) {
@@ -61,6 +65,33 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
             {trending && <span className="ml-2 text-cipher-300">· Trending</span>}
           </p>
         </div>
+        {mine && (
+          <div className="relative">
+            <button onClick={() => setMenu((m) => !m)} className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white">
+              <MoreHorizontal className="h-5 w-5" />
+            </button>
+            <AnimatePresence>
+              {menu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-white/10 bg-surface shadow-xl"
+                  >
+                    <button
+                      onClick={() => { setMenu(false); deletePost(post.id); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-rose-300 hover:bg-white/5"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete post
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* body copy */}

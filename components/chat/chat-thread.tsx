@@ -62,10 +62,17 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
     return <div className="grid h-screen place-items-center text-white/40">Conversation not found.</div>;
   }
 
+  const holeSize = Math.min(520, 150 + Math.sqrt(meta.convMessages.length) * 38);
+
   return (
-    <div className="flex h-screen flex-col">
+    <div className="relative flex h-screen flex-col overflow-hidden">
+      {/* growing black hole — its mass is the weight of the conversation */}
+      <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center opacity-[0.28]">
+        <BlackHole size={holeSize} count={meta.convMessages.length} />
+      </div>
+
       {/* header */}
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-black px-4 py-3">
+      <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/10 bg-black px-4 py-3">
         <Link href="/messages" className="rounded-full p-1.5 hover:bg-white/10 lg:hidden">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -87,7 +94,6 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
             </div>
           </div>
         </button>
-        <BlackHole count={meta.convMessages.length} />
         <button className="hidden rounded-full p-2 text-white/50 hover:bg-white/10 sm:block"><Phone className="h-5 w-5" /></button>
         <button className="hidden rounded-full p-2 text-white/50 hover:bg-white/10 sm:block"><Video className="h-5 w-5" /></button>
         <button onClick={() => setShowSafety((s) => !s)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
@@ -109,7 +115,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
       )}
 
       {/* messages */}
-      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto py-4">
+      <div className="relative z-10 flex flex-1 flex-col gap-1.5 overflow-y-auto py-4">
         <div className="mx-auto mb-3 flex max-w-sm items-center gap-2 rounded-full bg-white/5 px-3.5 py-1.5 text-center text-[11px] text-white/40">
           <ShieldCheck className="h-3.5 w-3.5 text-cipher-400" />
           Messages are end-to-end encrypted. No one outside this chat can read them.
@@ -151,7 +157,9 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
         <div ref={bottomRef} />
       </div>
 
-      <MessageComposer conversationId={conversationId} replyTo={replyTo} onClearReply={() => setReplyTo(null)} />
+      <div className="relative z-10">
+        <MessageComposer conversationId={conversationId} replyTo={replyTo} onClearReply={() => setReplyTo(null)} />
+      </div>
 
       {conv.isGroup && <GroupPanel conv={conv} open={showGroup} onClose={() => setShowGroup(false)} />}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   Bell,
   Compass,
@@ -63,13 +64,8 @@ export function AppPreview() {
             </div>
           </div>
 
-          {/* messages */}
-          <div className="space-y-3 px-3.5 py-4">
-            <Row name="Aria" text="pushed the crypto module — please review 🙏" time="9:24" />
-            <Row mine text="reviewing now 👀" time="9:25" />
-            <VoiceRow time="9:26" />
-            <Row mine text="sealed-key flow is clean 🔐" time="9:27" />
-          </div>
+          {/* messages — a living, looping conversation */}
+          <AnimatedChat />
 
           {/* command bar */}
           <div className="flex justify-center px-3.5 pb-4 pt-1">
@@ -108,6 +104,79 @@ export function AppPreview() {
           <p className="text-[10px] text-white/45">vanishes in 5h</p>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+type Turn = { from: 'them' | 'me'; text?: string; time: string; voice?: boolean };
+const SCRIPT: Turn[] = [
+  { from: 'them', text: 'pushed the crypto module — review? 🙏', time: '9:24' },
+  { from: 'me', text: 'on it 🔐', time: '9:25' },
+  { from: 'them', voice: true, time: '9:26' },
+  { from: 'me', text: 'sealed-key flow is clean ✷', time: '9:27' },
+];
+
+// Plays the conversation on a loop — typing dots, slide-ins, then resets.
+function AnimatedChat() {
+  const [shown, setShown] = useState(0);
+  const [typing, setTyping] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShown(SCRIPT.length);
+      return;
+    }
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    (async () => {
+      while (!cancelled) {
+        setShown(0);
+        setTyping(false);
+        await sleep(800);
+        for (let i = 0; i < SCRIPT.length; i++) {
+          if (cancelled) return;
+          if (SCRIPT[i].from === 'them') {
+            setTyping(true);
+            await sleep(1000);
+            if (cancelled) return;
+            setTyping(false);
+          } else {
+            await sleep(450);
+          }
+          setShown(i + 1);
+          await sleep(950);
+        }
+        await sleep(2800);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <div className="flex min-h-[208px] flex-col justify-end gap-3 px-3.5 py-4">
+      <AnimatePresence mode="popLayout">
+        {SCRIPT.slice(0, shown).map((t, i) => (
+          <motion.div
+            key={i}
+            layout
+            initial={{ opacity: 0, y: 8, x: t.from === 'me' ? 12 : -12 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+          >
+            {t.voice ? <VoiceRow time={t.time} /> : <Row name={t.from === 'them' ? 'Aria' : undefined} mine={t.from === 'me'} text={t.text!} time={t.time} />}
+          </motion.div>
+        ))}
+        {typing && (
+          <motion.div key="typing" layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-400">Aria</p>
+            <div className="inline-flex gap-1 rounded-full bg-white/[0.08] px-3 py-2">
+              {[0, 1, 2].map((d) => (
+                <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-white/60" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.7, repeat: Infinity, delay: d * 0.15 }} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

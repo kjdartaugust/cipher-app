@@ -16,6 +16,7 @@ import { Logo } from '@/components/ui/logo';
 import { AppPreview } from '@/components/marketing/app-preview';
 import { Showcase } from '@/components/marketing/showcase';
 import { DecryptText } from '@/components/marketing/decrypt-text';
+import { MagneticLink } from '@/components/marketing/magnetic';
 
 const features = [
   { icon: Lock, title: 'Messages only you can read', body: 'Every DM and group chat is encrypted on your device with libsodium. The server only ever holds ciphertext.' },
@@ -74,8 +75,8 @@ export default function Landing() {
           </motion.p>
 
           <motion.div variants={item} className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/feed" className="btn-primary w-full px-7 py-3 text-base sm:w-auto">Enter the demo <ArrowRight className="h-4 w-4" /></Link>
-            <Link href="/login" className="btn-ghost w-full px-7 py-3 text-base sm:w-auto">Create account</Link>
+            <MagneticLink href="/feed" className="btn-primary w-full px-7 py-3 text-base sm:w-auto">Enter the demo <ArrowRight className="h-4 w-4" /></MagneticLink>
+            <MagneticLink href="/login" className="btn-ghost w-full px-7 py-3 text-base sm:w-auto">Create account</MagneticLink>
           </motion.div>
           <motion.p variants={item} className="mt-4 text-xs text-white/35">
             No signup required — the demo runs entirely in your browser with live encryption.

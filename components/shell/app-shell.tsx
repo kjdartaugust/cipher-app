@@ -7,6 +7,7 @@ import { BottomNav } from './bottom-nav';
 import { ComposeModal } from '@/components/post/compose-modal';
 import { UnlockModal } from '@/components/unlock-modal';
 import { Logo } from '@/components/ui/logo';
+import { FeedSkeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/lib/store';
 
 const ComposeCtx = createContext<() => void>(() => {});
@@ -18,15 +19,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="grid min-h-screen place-items-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <Logo size="lg" showText={false} />
-          <p className="animate-pulse text-sm text-white/40">Generating your keys…</p>
-        </motion.div>
+      <div className="mx-auto flex w-full max-w-7xl">
+        <div className="hidden w-[260px] shrink-0 border-r border-white/5 px-4 py-6 lg:block">
+          <Logo size="md" />
+        </div>
+        <main className="min-h-screen flex-1">
+          <div className="flex items-center justify-center gap-2 py-3 text-xs text-white/40">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-500" /> Decrypting your Cipher…
+          </div>
+          <FeedSkeleton />
+        </main>
       </div>
     );
   }

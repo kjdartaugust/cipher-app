@@ -17,8 +17,8 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
   return (
     <div
       aria-hidden
-      className={cn('huecycle pointer-events-none relative grid place-items-center', className)}
-      style={{ width: size, height: size, perspective: 1100 }}
+      className={cn('pointer-events-none relative grid place-items-center', className)}
+      style={{ width: size, height: size, perspective: 1100, contain: 'layout paint' }}
     >
       {/* ── polar jets (perpendicular to the disk) ── */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

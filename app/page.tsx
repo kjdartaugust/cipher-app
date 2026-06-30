@@ -35,12 +35,12 @@ export default function Landing() {
   return (
     <main className="relative overflow-hidden">
       {/* quasar centerpiece behind the hero */}
-      <div className="pointer-events-none absolute inset-x-0 top-[-230px] flex justify-center">
-        <QuasarCore size={560} className="opacity-80" />
+      <div className="pointer-events-none absolute inset-x-0 top-[-250px] flex justify-center">
+        <QuasarCore size={620} className="opacity-90" />
       </div>
 
       {/* nav */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo size="md" />
         <nav className="flex items-center gap-4">
           <Link href="/login" className="hidden text-sm text-white/60 hover:text-white sm:block">Sign in</Link>
@@ -49,7 +49,7 @@ export default function Landing() {
       </header>
 
       {/* hero */}
-      <section className="mx-auto max-w-5xl px-6 pb-16 pt-16 text-center sm:pt-24">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-16 pt-16 text-center sm:pt-24">
         <motion.div initial="hidden" animate="show" variants={container}>
           <motion.div variants={item} className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-600/30 bg-violet-600/10 px-4 py-1.5 text-xs font-medium text-violet-200">
             <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />

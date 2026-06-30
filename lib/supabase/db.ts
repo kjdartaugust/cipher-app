@@ -121,7 +121,10 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
   const mappedStories: Story[] = (stories ?? []).map((s: any) => ({
     id: s.id,
     authorId: s.author_id,
-    media: s.media,
+    kind: s.kind ?? 'photo',
+    media: s.media ?? undefined,
+    text: s.text ?? undefined,
+    audioDuration: s.audio_duration ?? undefined,
     createdAt: ts(s.created_at),
     expiresAt: ts(s.expires_at),
     highlighted: s.highlighted ?? false,
@@ -243,6 +246,19 @@ export const db = {
 
   updateProfile: (s: DB, id: string, patch: { name?: string; bio?: string; avatar?: string; private?: boolean }) =>
     s.from('profiles').update(patch).eq('id', id),
+
+  insertMoment: (
+    s: DB,
+    row: { author_id: string; kind: string; text?: string; audio_duration?: number; expires_at: string }
+  ) =>
+    s.from('stories').insert({
+      author_id: row.author_id,
+      kind: row.kind,
+      text: row.text ?? null,
+      audio_duration: row.audio_duration ?? null,
+      media: null,
+      expires_at: row.expires_at,
+    }).select().single(),
 
   myBlocks: (s: DB, me: string) => s.from('blocks').select('blocked_id').eq('blocker_id', me),
   block: (s: DB, me: string, target: string) => s.from('blocks').insert({ blocker_id: me, blocked_id: target }),

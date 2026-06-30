@@ -4,12 +4,14 @@ import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { StoryViewer } from './story-viewer';
+import { MomentComposer } from './moment-composer';
 import { useApp } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
 export function StoriesBar() {
   const { stories, users, me, userById } = useApp();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [composing, setComposing] = useState(false);
 
   // group active (non-expired) stories by author, "you" first
   const grouped = useMemo(() => {
@@ -30,21 +32,25 @@ export function StoriesBar() {
   return (
     <>
       <div className="no-scrollbar flex gap-5 overflow-x-auto border-b border-white/10 px-5 py-5 sm:px-8">
-        {/* your story / add */}
+        {/* your moment / drop */}
         <button
           onClick={() => {
             const idx = flat.findIndex((s) => s.authorId === me.id);
             if (idx >= 0) setActiveIndex(idx);
+            else setComposing(true);
           }}
           className="flex w-16 shrink-0 flex-col items-center gap-2"
         >
           <span className={cn('relative rounded-full', myStory && 'orbit-live')}>
-            <Avatar src={me.avatar} alt="Your story" size={64} ring={!!myStory} />
-            <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-black bg-blue">
+            <Avatar src={me.avatar} alt="Your moment" size={64} ring={!!myStory} />
+            <span
+              onClick={(e) => { e.stopPropagation(); setComposing(true); }}
+              className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-black bg-blue"
+            >
               <Plus className="h-3 w-3 text-white" strokeWidth={2.5} />
             </span>
           </span>
-          <span className="truncate text-xs text-white/55">You</span>
+          <span className="truncate text-xs text-white/55">{myStory ? 'You' : 'Drop'}</span>
         </button>
 
         {grouped
@@ -74,6 +80,8 @@ export function StoriesBar() {
           onClose={() => setActiveIndex(null)}
         />
       )}
+
+      <MomentComposer open={composing} onClose={() => setComposing(false)} />
     </>
   );
 }

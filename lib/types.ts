@@ -34,10 +34,16 @@ export interface Comment {
   likes: string[];
 }
 
+export type MomentKind = 'photo' | 'text' | 'voice';
+
 export interface Story {
   id: string;
   authorId: string;
-  media: { type: 'image' | 'video'; url: string };
+  // Moments: photo stories carry media; text/voice "mood drops" use text/audioDuration.
+  kind?: MomentKind;
+  media?: { type: 'image' | 'video'; url: string };
+  text?: string;
+  audioDuration?: number;
   createdAt: number;
   expiresAt: number;
   viewers: { userId: string; reaction?: string; at: number }[];

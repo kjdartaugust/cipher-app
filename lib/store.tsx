@@ -534,6 +534,25 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     createPost,
     toggleFollow,
     viewStory,
+    createMoment: async (kind, text, durationSec) => {
+      const now = Date.now();
+      setState((s) => ({
+        ...s,
+        stories: [
+          {
+            id: uid('moment'),
+            authorId: ME_ID,
+            kind,
+            text: kind === 'text' ? text : undefined,
+            audioDuration: kind === 'voice' ? durationSec : undefined,
+            createdAt: now,
+            expiresAt: now + 6 * 60 * 60 * 1000,
+            viewers: [],
+          },
+          ...s.stories,
+        ],
+      }));
+    },
     sendMessage,
     reactToMessage,
     editMessage,

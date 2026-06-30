@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Eye, Heart, Send, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { VoiceNote } from '@/components/chat/voice-note';
 import { useApp } from '@/lib/store';
 import type { Story } from '@/lib/types';
 import { timeAgo } from '@/lib/utils';
@@ -97,8 +98,26 @@ export function StoryViewer({
             </div>
           </div>
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={story.media.url} alt="" className="h-full w-full object-cover" />
+          {story.kind === 'text' ? (
+            <div className="grid h-full w-full place-items-center bg-gradient-to-b from-violet-900/40 via-black to-black px-8">
+              <p className="headline text-center text-3xl leading-snug text-white sm:text-4xl">{story.text}</p>
+            </div>
+          ) : story.kind === 'voice' ? (
+            <div className="grid h-full w-full place-items-center bg-gradient-to-b from-violet-900/40 via-black to-black px-8">
+              <div className="flex flex-col items-center gap-6">
+                <p className="kicker">Voice moment</p>
+                <div className="flex items-end gap-[3px]">
+                  {Array.from({ length: 28 }).map((_, i) => (
+                    <span key={i} className="w-1 rounded-full bg-violet-400" style={{ height: 10 + ((i * 17) % 60) }} />
+                  ))}
+                </div>
+                <VoiceNote duration={story.audioDuration ?? 6} mine={false} />
+              </div>
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={story.media?.url} alt="" className="h-full w-full object-cover" />
+          )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50" />
 
           {/* tap zones */}

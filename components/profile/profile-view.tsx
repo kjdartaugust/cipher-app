@@ -91,7 +91,7 @@ export function ProfileView({ user }: { user: User }) {
           <div className="mt-5 flex gap-4">
             {highlights.map((h) => (
               <div key={h.id} className="flex flex-col items-center gap-1">
-                <Avatar src={h.media.url} alt="Highlight" size={62} ring />
+                <Avatar src={h.media?.url ?? user.avatar} alt="Highlight" size={62} ring />
                 <span className="text-xs text-white/60">Highlights</span>
               </div>
             ))}

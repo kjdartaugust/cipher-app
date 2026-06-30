@@ -368,6 +368,36 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     if (reaction && story && story.authorId !== mine()) db.notify(supa(), { user_id: story.authorId, actor_id: mine(), type: 'reaction', preview: `reacted ${reaction} to your story` });
   }, [state.stories]);
 
+  const createMoment = useCallback(async (kind: 'text' | 'voice', text: string, durationSec?: number) => {
+    const now = Date.now();
+    const expiresAt = new Date(now + 6 * 60 * 60 * 1000).toISOString();
+    const { data } = await db.insertMoment(supa(), {
+      author_id: mine(),
+      kind,
+      text: kind === 'text' ? text : undefined,
+      audio_duration: kind === 'voice' ? durationSec : undefined,
+      expires_at: expiresAt,
+    });
+    if (data) {
+      setState((s) => ({
+        ...s,
+        stories: [
+          {
+            id: data.id,
+            authorId: mine(),
+            kind,
+            text: kind === 'text' ? text : undefined,
+            audioDuration: kind === 'voice' ? durationSec : undefined,
+            createdAt: now,
+            expiresAt: now + 6 * 60 * 60 * 1000,
+            viewers: [],
+          },
+          ...s.stories,
+        ],
+      }));
+    }
+  }, []);
+
   const decryptedFor = useCallback(
     (conversationId: string) => state.messages.filter((m) => m.conversationId === conversationId),
     [state.messages]
@@ -553,7 +583,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextValue = {
     ...state, me, ready, typing, needsUnlock, blocked,
     toggleLike, toggleSave, sharePost, addComment, createPost, toggleFollow,
-    viewStory, sendMessage, reactToMessage, editMessage, deleteMessage,
+    viewStory, createMoment, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
     markAllNotificationsRead, userById, updateProfile, unlock,
     toggleBlock, setPrivacy, changePassword, deleteAccount, myFingerprint, signOut,

@@ -40,7 +40,7 @@ export function AppPreview() {
   return (
     <div className="relative mx-auto flex max-w-md justify-center px-6 pb-24" onMouseMove={onMove} onMouseLeave={onLeave}>
       {/* soft violet halo */}
-      <div className="pointer-events-none absolute inset-x-10 top-10 -z-10 h-72 rounded-full bg-violet-600/20 blur-[90px]" />
+      <div className="pointer-events-none absolute inset-x-16 top-16 -z-10 h-56 rounded-full bg-violet-600/20 blur-[44px]" />
 
       {/* phone */}
       <motion.div

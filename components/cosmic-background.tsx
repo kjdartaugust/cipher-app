@@ -1,6 +1,6 @@
 // Subtle deep-space backdrop behind the whole app: faint nebula + sparse stars.
 // Server component (static) so it costs nothing at runtime.
-const STARS = Array.from({ length: 60 }, (_, i) => ({
+const STARS = Array.from({ length: 36 }, (_, i) => ({
   top: (i * 73) % 100,
   left: (i * 37 + 11) % 100,
   size: i % 7 === 0 ? 2 : 1,

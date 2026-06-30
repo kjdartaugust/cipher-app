@@ -57,7 +57,7 @@ function Band({ kicker, title, body, screen, reverse }: { kicker: string; title:
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative w-[300px]">
-      <div className="pointer-events-none absolute inset-x-8 top-8 -z-10 h-56 rounded-full bg-violet-600/20 blur-[80px]" />
+      <div className="pointer-events-none absolute inset-x-10 top-10 -z-10 h-44 rounded-full bg-violet-600/15 blur-[44px]" />
       <div className="overflow-hidden rounded-[2rem] border border-white/15 bg-black p-2 shadow-2xl shadow-violet-900/30">
         <div className="overflow-hidden rounded-[1.5rem] border border-white/10">{children}</div>
       </div>

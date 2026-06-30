@@ -9,10 +9,9 @@ const DISK = 'conic-gradient(from 0deg, #FDE68A, #FB923C, #D946EF, #7C3AED, #4F8
 
 export function BlackHole({ size, count }: { size: number; count: number }) {
   return (
-    <div className="relative grid place-items-center" style={{ width: size, height: size, contain: 'layout paint' }}>
+    <div className="relative grid place-items-center" style={{ width: size, height: size }}>
       {/* inclined, spinning disk (flat scaleY squash — zoom-stable, no masks) */}
       <div className="absolute inset-0 grid place-items-center" style={{ transform: 'scaleY(0.34)' }}>
-        <div className="absolute inset-0 rounded-full opacity-40 blur-2xl" style={{ background: DISK }} />
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}

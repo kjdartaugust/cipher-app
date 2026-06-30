@@ -17,7 +17,7 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
     <div
       aria-hidden
       className={cn('pointer-events-none relative grid place-items-center', className)}
-      style={{ width: size, height: size, contain: 'layout paint' }}
+      style={{ width: size, height: size }}
     >
       {/* ── polar jets (perpendicular to the disk) ── */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -28,8 +28,6 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
 
       {/* ── inclined accretion disk (flat scaleY squash — zoom-stable) ── */}
       <div className="absolute inset-0 grid place-items-center" style={{ transform: 'scaleY(0.3)' }}>
-        {/* soft outer halo */}
-        <div className="absolute rounded-full opacity-40 blur-3xl" style={{ width: size, height: size, background: disk }} />
         {/* main rotating disk (full circle; the dark core makes the hole) */}
         <motion.div
           animate={{ rotate: 360 }}
@@ -51,7 +49,7 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
       <motion.div
         animate={{ scale: [1, 1.15, 1], opacity: [0.8, 1, 0.8] }}
         transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute rounded-full blur-2xl"
+        className="absolute rounded-full blur-lg"
         style={{ width: size * 0.4, height: size * 0.4, background: 'radial-gradient(circle, #FFFFFF, #FDE68A 35%, rgba(217,70,239,0.5) 65%, transparent 75%)' }}
       />
       {/* fast-spinning photon ring (full disk; the event horizon sits on top) */}

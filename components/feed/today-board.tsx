@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   AnimatePresence,
@@ -28,6 +28,18 @@ export function TodayBoard({ posts }: { posts: Post[] }) {
     if (like && !post.likes.includes(me.id)) toggleLike(post.id);
     setIndex((i) => Math.min(i + 1, posts.length));
   }
+
+  // Keyboard: ← skip, → like the current card.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (expanded || index >= posts.length) return;
+      if (e.key === 'ArrowRight') advance(true, posts[index]);
+      else if (e.key === 'ArrowLeft') advance(false, posts[index]);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, posts, expanded]);
 
   if (posts.length === 0) {
     return <Empty text="No posts yet — follow people to fill your board." />;
@@ -81,6 +93,7 @@ export function TodayBoard({ posts }: { posts: Post[] }) {
           <Heart className="h-6 w-6" strokeWidth={1.75} />
         </Ctrl>
       </div>
+      <p className="mt-3 text-[11px] text-white/30">Swipe the card · or use ← →</p>
 
       {/* expanded post + comments */}
       <AnimatePresence>

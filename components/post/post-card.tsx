@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bookmark,
+  Check,
   Heart,
   MessageCircle,
   MoreHorizontal,
+  Pencil,
   Send,
   Share2,
   Trash2,
@@ -18,7 +20,7 @@ import type { Post } from '@/lib/types';
 import { cn, compactNumber, timeAgo } from '@/lib/utils';
 
 export function PostCard({ post, trending }: { post: Post; trending?: boolean }) {
-  const { userById, me, toggleLike, toggleSave, sharePost, addComment, deletePost } = useApp();
+  const { userById, me, toggleLike, toggleSave, sharePost, addComment, deletePost, editPost } = useApp();
   const author = userById(post.authorId);
   const liked = post.likes.includes(me.id);
   const saved = post.saves.includes(me.id);
@@ -26,7 +28,15 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
   const [commentText, setCommentText] = useState('');
   const [burst, setBurst] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(post.text);
   const mine = post.authorId === me.id;
+
+  function saveEdit() {
+    const v = draft.trim();
+    if (v && v !== post.text) editPost(post.id, v);
+    setEditing(false);
+  }
 
   function like() {
     if (!liked) {
@@ -81,6 +91,12 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
                     className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-white/10 bg-surface shadow-xl"
                   >
                     <button
+                      onClick={() => { setMenu(false); setDraft(post.text); setEditing(true); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-white hover:bg-white/5"
+                    >
+                      <Pencil className="h-4 w-4" /> Edit post
+                    </button>
+                    <button
                       onClick={() => { setMenu(false); deletePost(post.id); }}
                       className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-rose-300 hover:bg-white/5"
                     >
@@ -95,10 +111,24 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
       </div>
 
       {/* body copy */}
-      {post.text && (
-        <p className="mb-4 max-w-2xl text-[17px] leading-relaxed text-white/90">
-          {post.text}
-        </p>
+      {editing ? (
+        <div className="mb-4">
+          <textarea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={3}
+            className="input resize-none text-[17px]"
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <button onClick={() => setEditing(false)} className="btn-ghost px-3 py-1.5 text-xs">Cancel</button>
+            <button onClick={saveEdit} className="btn-primary px-3 py-1.5 text-xs"><Check className="h-3.5 w-3.5" /> Save</button>
+          </div>
+        </div>
+      ) : (
+        post.text && (
+          <p className="mb-4 max-w-2xl text-[17px] leading-relaxed text-white/90">{post.text}</p>
+        )
       )}
 
       {/* media — wide, no rounded card chrome */}

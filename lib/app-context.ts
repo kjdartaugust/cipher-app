@@ -36,6 +36,7 @@ export interface AppContextValue extends AppState {
   addComment: (postId: string, text: string) => void;
   createPost: (text: string, media?: Post['media']) => void;
   deletePost: (postId: string) => void;
+  editPost: (postId: string, text: string) => void;
   toggleFollow: (userId: string) => void;
   // stories / moments
   viewStory: (storyId: string, reaction?: string) => void;

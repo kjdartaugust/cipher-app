@@ -238,6 +238,10 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, posts: s.posts.filter((p) => p.id !== postId) }));
   }, []);
 
+  const editPost = useCallback((postId: string, text: string) => {
+    setState((s) => ({ ...s, posts: s.posts.map((p) => (p.id === postId ? { ...p, text } : p)) }));
+  }, []);
+
   const createPost = useCallback((text: string, media?: Post['media']) => {
     const p: Post = {
       id: uid('p'),
@@ -539,6 +543,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     addComment,
     createPost,
     deletePost,
+    editPost,
     toggleFollow,
     viewStory,
     createMoment: async (kind, text, durationSec) => {

@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
-import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, SlidersHorizontal, UserCheck, UserPlus, UserX } from 'lucide-react';
+import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, SlidersHorizontal, UserCheck, UserPlus, UserX, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
-import { VerifiedBadge } from '@/components/post/post-card';
+import { VerifiedBadge, PostCard } from '@/components/post/post-card';
 import { EditProfileModal } from './edit-profile-modal';
+import type { Post } from '@/lib/types';
 import { useApp } from '@/lib/store';
 import { IS_DEMO } from '@/lib/config';
 import type { User } from '@/lib/types';
@@ -20,6 +21,7 @@ export function ProfileView({ user }: { user: User }) {
   const following = me.following.includes(user.id);
   const [tab, setTab] = useState<'posts' | 'saved'>('posts');
   const [editing, setEditing] = useState(false);
+  const [openPost, setOpenPost] = useState<Post | null>(null);
 
   const userPosts = posts.filter((p) => p.authorId === user.id).sort((a, b) => b.createdAt - a.createdAt);
   const savedPosts = posts.filter((p) => p.saves.includes(me.id));
@@ -110,10 +112,11 @@ export function ProfileView({ user }: { user: User }) {
         {grid.filter((p) => p.media?.[0]).map((p) => (
           <motion.div
             key={p.id}
+            onClick={() => setOpenPost(p)}
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
-            className="group relative break-inside-avoid overflow-hidden rounded-lg bg-white/5"
+            className="group relative cursor-pointer break-inside-avoid overflow-hidden rounded-lg bg-white/5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.media![0].url} alt="" className="w-full object-cover transition group-hover:scale-[1.03]" />
@@ -130,6 +133,25 @@ export function ProfileView({ user }: { user: User }) {
       )}
 
       {isMe && <EditProfileModal open={editing} onClose={() => setEditing(false)} />}
+
+      {/* tap a grid post to open it (edit/delete via its ··· menu) */}
+      <AnimatePresence>
+        {openPost && (() => {
+          const live = posts.find((p) => p.id === openPost.id);
+          if (!live) { setOpenPost(null); return null; }
+          return (
+            <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-black/95" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-black px-5 py-3">
+                <span className="kicker">Post</span>
+                <button onClick={() => setOpenPost(null)} className="rounded-full p-2 text-white/60 hover:bg-white/10"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="mx-auto max-w-xl px-5">
+                <PostCard post={live} />
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

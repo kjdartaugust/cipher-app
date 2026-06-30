@@ -377,6 +377,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     db.deletePost(supa(), postId);
   }, []);
 
+  const editPost = useCallback((postId: string, text: string) => {
+    setState((s) => ({ ...s, posts: s.posts.map((p) => (p.id === postId ? { ...p, text } : p)) }));
+    db.editPost(supa(), postId, text);
+  }, []);
+
   const createPost = useCallback((text: string, media?: Post['media']) => {
     db.insertPost(supa(), { author_id: mine(), text, media }).then(({ data }) => {
       if (data) setState((s) => ({ ...s, posts: [{ id: data.id, authorId: mine(), text, media, createdAt: Date.now(), likes: [], saves: [], shares: 0, comments: [] }, ...s.posts] }));
@@ -671,7 +676,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextValue = {
     ...state, me, ready, typing, needsUnlock, blocked,
-    toggleLike, toggleSave, sharePost, addComment, createPost, deletePost, toggleFollow,
+    toggleLike, toggleSave, sharePost, addComment, createPost, deletePost, editPost, toggleFollow,
     viewStory, createMoment, sendMessage, reactToMessage, editMessage, deleteMessage,
     markConversationRead, startTyping, createConversation, decryptedFor,
     renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup,

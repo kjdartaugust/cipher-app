@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Phone, ShieldCheck, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { CipherBadge } from '@/components/ui/cipher-badge';
+import { BlackHole } from './black-hole';
 import { GroupPanel } from './group-panel';
 import { MessageBubble } from './message-bubble';
 import { MessageComposer } from './message-composer';
@@ -81,8 +82,9 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
             </div>
           </div>
         </button>
-        <button className="rounded-full p-2 text-white/50 hover:bg-white/10"><Phone className="h-5 w-5" /></button>
-        <button className="rounded-full p-2 text-white/50 hover:bg-white/10"><Video className="h-5 w-5" /></button>
+        <BlackHole count={meta.convMessages.length} />
+        <button className="hidden rounded-full p-2 text-white/50 hover:bg-white/10 sm:block"><Phone className="h-5 w-5" /></button>
+        <button className="hidden rounded-full p-2 text-white/50 hover:bg-white/10 sm:block"><Video className="h-5 w-5" /></button>
         <button onClick={() => setShowSafety((s) => !s)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
           <ShieldCheck className="h-5 w-5" />
         </button>

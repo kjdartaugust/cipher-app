@@ -102,6 +102,14 @@ body {
   animation: orbit-pulse 2.4s ease-in-out infinite;
 }
 
+/* slowly cycle the accent hue (for the spinning quasar) */
+@keyframes huecycle {
+  to { filter: hue-rotate(360deg); }
+}
+.huecycle {
+  animation: huecycle 14s linear infinite;
+}
+
 /* occasional shooting stars / meteors */
 @keyframes shoot {
   0% { transform: translate3d(0, 0, 0) scaleX(1); opacity: 0; }

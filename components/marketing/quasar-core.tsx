@@ -17,7 +17,7 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
   return (
     <div
       aria-hidden
-      className={cn('pointer-events-none relative grid place-items-center', className)}
+      className={cn('huecycle pointer-events-none relative grid place-items-center', className)}
       style={{ width: size, height: size, perspective: 1100 }}
     >
       {/* ── polar jets (perpendicular to the disk) ── */}
@@ -55,7 +55,20 @@ export function QuasarCore({ className, size = 560 }: { className?: string; size
         className="absolute rounded-full blur-2xl"
         style={{ width: size * 0.4, height: size * 0.4, background: 'radial-gradient(circle, #FFFFFF, #FDE68A 35%, rgba(217,70,239,0.5) 65%, transparent 75%)' }}
       />
-      {/* photon ring around the black hole */}
+      {/* fast-spinning photon ring just outside the event horizon */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+        className="absolute rounded-full blur-[1px]"
+        style={{
+          width: size * 0.3,
+          height: size * 0.3,
+          background: disk,
+          maskImage: 'radial-gradient(closest-side, transparent 58%, #000 62%, #000 84%, transparent 92%)',
+          WebkitMaskImage: 'radial-gradient(closest-side, transparent 58%, #000 62%, #000 84%, transparent 92%)',
+        }}
+      />
+      {/* black hole + photon ring */}
       <div
         className="absolute rounded-full"
         style={{

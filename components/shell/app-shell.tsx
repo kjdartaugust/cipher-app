@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sidebar } from './sidebar';
 import { BottomNav } from './bottom-nav';
@@ -11,6 +12,7 @@ import { CallOverlay } from '@/components/call/call-overlay';
 import { Logo } from '@/components/ui/logo';
 import { FeedSkeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/lib/store';
+import { cn } from '@/lib/utils';
 
 const ComposeCtx = createContext<() => void>(() => {});
 export const useCompose = () => useContext(ComposeCtx);
@@ -18,6 +20,8 @@ export const useCompose = () => useContext(ComposeCtx);
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { ready, needsUnlock } = useApp();
   const [composeOpen, setComposeOpen] = useState(false);
+  const pathname = usePathname();
+  const inThread = /^\/messages\/[^/]+$/.test(pathname);
 
   if (!ready) {
     return (
@@ -40,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ComposeCtx.Provider value={() => setComposeOpen(true)}>
         <div className="mx-auto flex w-full max-w-7xl">
           <Sidebar onCompose={() => setComposeOpen(true)} />
-          <main className="min-h-screen flex-1 pb-28 lg:pb-0">{children}</main>
+          <main className={cn('min-h-screen flex-1', inThread ? '' : 'pb-28 lg:pb-0')}>{children}</main>
         </div>
         <BottomNav />
         <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />

@@ -67,7 +67,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   const holeSize = Math.min(520, 150 + Math.sqrt(meta.convMessages.length) * 38);
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden">
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden lg:h-screen">
       {/* growing black hole — its mass is the weight of the conversation */}
       <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center opacity-[0.28]">
         <BlackHole size={holeSize} count={meta.convMessages.length} />

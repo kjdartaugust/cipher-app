@@ -19,7 +19,7 @@ export function ConversationList() {
   const sorted = [...conversations].sort((a, b) => b.lastMessageAt - a.lastMessageAt);
 
   return (
-    <div className="flex h-screen flex-col border-r border-white/5">
+    <div className="flex h-[100dvh] flex-col border-r border-white/5 pb-[max(5rem,env(safe-area-inset-bottom))] lg:h-screen lg:pb-0">
       <div className="sticky top-0 z-10 border-b border-white/10 bg-black p-4">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-xl font-bold">Messages</h1>

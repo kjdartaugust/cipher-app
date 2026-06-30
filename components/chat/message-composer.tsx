@@ -77,7 +77,7 @@ export function MessageComposer({
   }
 
   return (
-    <div className="border-t border-white/10 bg-black">
+    <div className="border-t border-white/10 bg-black pb-[env(safe-area-inset-bottom)]">
       <AnimatePresence>
         {replyTo && (
           <motion.div

@@ -33,7 +33,9 @@ export default function FeedPage() {
       const ageHours = (Date.now() - p.createdAt) / 3_600_000;
       const engagement = p.likes.length * 3 + p.comments.length * 4 + p.shares * 2;
       const affinity = me.following.includes(p.authorId) ? 25 : 0;
-      return engagement + affinity + (p.trendingScore ?? 0) * 0.5 - ageHours * 1.5;
+      // your own recent posts surface near the top, then decay over ~a day
+      const mineBoost = p.authorId === me.id ? Math.max(0, 150 - ageHours * 6) : 0;
+      return engagement + affinity + mineBoost + (p.trendingScore ?? 0) * 0.5 - ageHours * 1.5;
     }
   }, [posts, tab, me.following, blocked]);
 

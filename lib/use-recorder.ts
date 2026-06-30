@@ -22,7 +22,10 @@ export function useRecorder() {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.current = s;
-      const mr = new MediaRecorder(s);
+      // Pick a mime type this browser can both record AND play back.
+      const prefer = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+      const mimeType = prefer.find((t) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.(t));
+      const mr = mimeType ? new MediaRecorder(s, { mimeType }) : new MediaRecorder(s);
       chunks.current = [];
       mr.ondataavailable = (e) => { if (e.data.size) chunks.current.push(e.data); };
       mr.start();

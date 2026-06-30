@@ -46,8 +46,7 @@ export function MessageComposer({
     const res = await stop();
     if (!res) return;
     setUploading(true);
-    const file = new File([res.blob], 'voice.webm', { type: res.blob.type });
-    const url = (await uploadPublic('posts', file)) ?? URL.createObjectURL(res.blob);
+    const url = (await uploadPublic('posts', res.blob)) ?? URL.createObjectURL(res.blob);
     setUploading(false);
     sendMessage(conversationId, 'voice', url, { duration: res.duration, mime: res.blob.type }, replyTo?.id);
     onClearReply();

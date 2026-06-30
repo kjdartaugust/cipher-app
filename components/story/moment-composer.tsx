@@ -38,8 +38,7 @@ export function MomentComposer({ open, onClose }: { open: boolean; onClose: () =
       await createMoment('text', text.trim());
     } else {
       if (!recorded) return setBusy(false);
-      const file = new File([recorded.blob], 'moment.webm', { type: recorded.blob.type });
-      const url = (await uploadPublic('stories', file)) ?? URL.createObjectURL(recorded.blob);
+      const url = (await uploadPublic('stories', recorded.blob)) ?? URL.createObjectURL(recorded.blob);
       await createMoment('voice', url, recorded.duration);
     }
     setBusy(false);

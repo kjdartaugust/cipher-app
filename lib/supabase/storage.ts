@@ -12,11 +12,14 @@ export async function uploadPublic(bucket: string, file: File | Blob): Promise<s
   if (!supabase) return null;
   try {
     const name = 'name' in file ? file.name : '';
-    const ext = name.includes('.') ? name.split('.').pop() : (file.type.split('/')[1] ?? 'bin');
+    // strip codec params (e.g. "audio/webm;codecs=opus") for the extension
+    const baseType = (file.type || '').split(';')[0];
+    const ext = name.includes('.') ? name.split('.').pop() : (baseType.split('/')[1] || 'bin');
     const path = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file, {
       cacheControl: '3600',
       upsert: false,
+      contentType: baseType || undefined, // critical for audio to decode on playback
     });
     if (error) return null;
     return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;

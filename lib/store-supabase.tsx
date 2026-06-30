@@ -32,6 +32,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const [typing, setTyping] = useState<Record<string, string[]>>({});
   const [blocked, setBlocked] = useState<string[]>([]);
+  const [presence, setPresence] = useState<Record<string, { status: 'online' | 'chatting'; at: number }>>({});
+  const presenceCh = useRef<RealtimeChannel | null>(null);
 
   const sb = useRef<SupabaseClient | null>(null);
   const myId = useRef<string>('');
@@ -83,6 +85,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           notifications: data.notifications,
         });
         subscribe(supabase!);
+        subscribePresence(supabase!, userId);
       } catch (err) {
         // Don't trap the user on "Generating your keys…" — surface and continue.
         console.error('[Cipher] bootstrap failed:', err);
@@ -102,6 +105,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
+      presenceCh.current?.unsubscribe();
       channel.current?.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -290,6 +294,28 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     ch.subscribe();
     channel.current = ch;
   }
+
+  // ---- live presence: who is online / in a chat right now ----
+  function subscribePresence(supabase: SupabaseClient, userId: string) {
+    const ch = supabase.channel('presence:cipher', { config: { presence: { key: userId } } });
+    ch.on('presence', { event: 'sync' }, () => {
+      const state = ch.presenceState() as Record<string, { status?: 'online' | 'chatting'; at?: number }[]>;
+      const map: Record<string, { status: 'online' | 'chatting'; at: number }> = {};
+      for (const [id, metas] of Object.entries(state)) {
+        const m = metas[metas.length - 1] ?? {};
+        map[id] = { status: m.status === 'chatting' ? 'chatting' : 'online', at: m.at ?? Date.now() };
+      }
+      setPresence(map);
+    });
+    ch.subscribe((status) => {
+      if (status === 'SUBSCRIBED') ch.track({ status: 'online', at: Date.now() });
+    });
+    presenceCh.current = ch;
+  }
+
+  const setChatting = useCallback((on: boolean) => {
+    presenceCh.current?.track({ status: on ? 'chatting' : 'online', at: Date.now() });
+  }, []);
 
   // -------------------------------- derived ----------------------------------
   const me: User = useMemo(
@@ -587,6 +613,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     markConversationRead, startTyping, createConversation, decryptedFor,
     markAllNotificationsRead, userById, updateProfile, unlock,
     toggleBlock, setPrivacy, changePassword, deleteAccount, myFingerprint, signOut,
+    presence, setChatting,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

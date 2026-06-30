@@ -23,10 +23,15 @@ const RING: Record<Presence, string> = {
 const PRESENCE_LABEL: Record<Presence, string> = { online: 'online now', chatting: 'in a Cipher', away: 'away' };
 
 export default function PulsePage() {
-  const { users, posts, me, blocked, toggleFollow, messages } = useApp();
+  const { users, posts, me, blocked, toggleFollow, messages, presence } = useApp();
   const [query, setQuery] = useState('');
+  const liveMode = Object.keys(presence).length > 0;
 
   function presenceOf(u: User): Presence {
+    // Prefer real Supabase Realtime presence; fall back to a heuristic in demo mode.
+    const live = presence[u.id];
+    if (live) return live.status;
+    if (liveMode) return 'away';
     const recentlyMessaged = messages.some((m) => m.senderId === u.id && Date.now() - m.createdAt < 4 * 60_000);
     if (u.online && recentlyMessaged) return 'chatting';
     if (u.online) return 'online';
@@ -42,9 +47,11 @@ export default function PulsePage() {
     ? people.filter((u) => (u.name + u.username).toLowerCase().includes(query.toLowerCase()))
     : [];
 
+  const rank = (u: User) => (presence[u.id] ? 2 : liveMode ? 0 : u.online ? 1 : 0);
   const live = useMemo(
-    () => [...people].sort((a, b) => Number(b.online) - Number(a.online)),
-    [people]
+    () => [...people].sort((a, b) => rank(b) - rank(a)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [people, presence]
   );
 
   const trending = useMemo(

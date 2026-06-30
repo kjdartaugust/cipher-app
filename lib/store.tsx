@@ -527,6 +527,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     typing,
     needsUnlock: false,
     unlock: async () => true,
+    presence: {},
+    setChatting: () => {},
     toggleLike,
     toggleSave,
     sharePost,

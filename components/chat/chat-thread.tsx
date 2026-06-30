@@ -14,7 +14,7 @@ import { keyFingerprint } from '@/lib/crypto';
 import type { Message } from '@/lib/types';
 
 export function ChatThread({ conversationId }: { conversationId: string }) {
-  const { conversations, me, typing, markConversationRead, userById } = useApp();
+  const { conversations, me, typing, markConversationRead, userById, setChatting } = useApp();
   const conv = conversations.find((c) => c.id === conversationId);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [fingerprint, setFingerprint] = useState('');
@@ -26,6 +26,12 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   useEffect(() => {
     if (conversationId) markConversationRead(conversationId);
   }, [conversationId, meta.convMessages.length, markConversationRead]);
+
+  // Broadcast "in a Cipher" presence while this thread is open.
+  useEffect(() => {
+    setChatting(true);
+    return () => setChatting(false);
+  }, [setChatting]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

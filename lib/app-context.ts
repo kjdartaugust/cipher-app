@@ -26,6 +26,9 @@ export interface AppContextValue extends AppState {
   typing: Record<string, string[]>; // conversationId -> userIds typing
   needsUnlock: boolean; // true when this device's key can't decrypt — prompt for password
   unlock: (password: string) => Promise<boolean>;
+  // live presence (Supabase Realtime): userId -> status
+  presence: Record<string, { status: 'online' | 'chatting'; at: number }>;
+  setChatting: (on: boolean) => void;
   // social
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;

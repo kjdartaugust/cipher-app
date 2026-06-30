@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ImagePlus, Loader2, Mic, Paperclip, Send, Smile, Trash2, X } from 'lucide-react';
 import { useApp } from '@/lib/store';
 import { uploadPublic } from '@/lib/supabase/storage';
+import { useRecorder } from '@/lib/use-recorder';
 import type { Message } from '@/lib/types';
 
 const EMOJIS = ['😀','😂','🥰','😎','🤔','😮','😢','🔥','💜','👍','🙏','✨','🎉','💯','👀','🔐','📷','🎤'];
@@ -19,16 +20,12 @@ export function MessageComposer({
   onClearReply: () => void;
 }) {
   const { sendMessage, startTyping, userById } = useApp();
+  const { recording, seconds, error: recError, start, stop, cancel } = useRecorder();
   const [text, setText] = useState('');
   const [emoji, setEmoji] = useState(false);
-  const [recording, setRecording] = useState(false);
-  const [seconds, setSeconds] = useState(0);
-  const timer = useRef<ReturnType<typeof setInterval>>();
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-
-  useEffect(() => () => clearInterval(timer.current), []);
 
   function send() {
     const value = text.trim();
@@ -38,19 +35,22 @@ export function MessageComposer({
     onClearReply();
   }
 
-  function startRec() {
-    setRecording(true);
-    setSeconds(0);
-    timer.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+  async function startRec() {
+    await start();
   }
-  function stopRec(sendIt: boolean) {
-    clearInterval(timer.current);
-    setRecording(false);
-    if (sendIt && seconds > 0) {
-      sendMessage(conversationId, 'voice', '🎤 Voice message', { duration: seconds }, replyTo?.id);
-      onClearReply();
+  async function stopRec(sendIt: boolean) {
+    if (!sendIt) {
+      cancel();
+      return;
     }
-    setSeconds(0);
+    const res = await stop();
+    if (!res) return;
+    setUploading(true);
+    const file = new File([res.blob], 'voice.webm', { type: res.blob.type });
+    const url = (await uploadPublic('posts', file)) ?? URL.createObjectURL(res.blob);
+    setUploading(false);
+    sendMessage(conversationId, 'voice', url, { duration: res.duration, mime: res.blob.type }, replyTo?.id);
+    onClearReply();
   }
 
   // Upload the file to public storage and send the (encrypted) URL so the other
@@ -114,6 +114,10 @@ export function MessageComposer({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {recError && !recording && (
+        <p className="px-4 pt-2 text-xs text-rose-300">{recError}</p>
+      )}
 
       {recording ? (
         <div className="flex items-center gap-3 p-3">

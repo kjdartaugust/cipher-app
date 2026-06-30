@@ -543,7 +543,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
             id: uid('moment'),
             authorId: ME_ID,
             kind,
-            text: kind === 'text' ? text : undefined,
+            text: text || undefined, // text content, or the audio URL for voice
             audioDuration: kind === 'voice' ? durationSec : undefined,
             createdAt: now,
             expiresAt: now + 6 * 60 * 60 * 1000,

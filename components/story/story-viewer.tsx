@@ -111,7 +111,7 @@ export function StoryViewer({
                     <span key={i} className="w-1 rounded-full bg-violet-400" style={{ height: 10 + ((i * 17) % 60) }} />
                   ))}
                 </div>
-                <VoiceNote duration={story.audioDuration ?? 6} mine={false} />
+                <VoiceNote duration={story.audioDuration ?? 6} mine={false} src={story.text} />
               </div>
             </div>
           ) : (

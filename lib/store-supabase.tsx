@@ -374,7 +374,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     const { data } = await db.insertMoment(supa(), {
       author_id: mine(),
       kind,
-      text: kind === 'text' ? text : undefined,
+      text: text || undefined, // text content, or the audio URL for voice
       audio_duration: kind === 'voice' ? durationSec : undefined,
       expires_at: expiresAt,
     });
@@ -386,7 +386,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             id: data.id,
             authorId: mine(),
             kind,
-            text: kind === 'text' ? text : undefined,
+            text: text || undefined, // text content, or the audio URL for voice
             audioDuration: kind === 'voice' ? durationSec : undefined,
             createdAt: now,
             expiresAt: now + 6 * 60 * 60 * 1000,

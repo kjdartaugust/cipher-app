@@ -100,7 +100,7 @@ export function MessageBubble({
               </button>
             </div>
           ) : message.kind === 'voice' ? (
-            <VoiceNote duration={message.meta?.duration ?? 8} mine={mine} />
+            <VoiceNote duration={message.meta?.duration ?? 8} mine={mine} src={message.plaintext || undefined} />
           ) : message.kind === 'image' ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={message.plaintext} alt="" className="max-h-72 rounded-lg" />

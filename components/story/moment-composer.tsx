@@ -1,37 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Lock, Mic, Square, Type, X } from 'lucide-react';
 import { useApp } from '@/lib/store';
+import { useRecorder } from '@/lib/use-recorder';
+import { uploadPublic } from '@/lib/supabase/storage';
 
 // Drop a Moment — an encrypted text or voice mood that expires in 6 hours.
 export function MomentComposer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { createMoment } = useApp();
+  const { recording, seconds, error: recError, start, stop, cancel } = useRecorder();
   const [mode, setMode] = useState<'text' | 'voice'>('text');
   const [text, setText] = useState('');
-  const [recording, setRecording] = useState(false);
-  const [seconds, setSeconds] = useState(0);
+  const [recorded, setRecorded] = useState<{ blob: Blob; duration: number } | null>(null);
   const [busy, setBusy] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval>>();
-
-  useEffect(() => () => clearInterval(timer.current), []);
 
   function reset() {
     setText('');
-    setSeconds(0);
-    setRecording(false);
-    clearInterval(timer.current);
+    setRecorded(null);
+    cancel();
   }
 
-  function startRec() {
-    setRecording(true);
-    setSeconds(0);
-    timer.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+  async function startRec() {
+    setRecorded(null);
+    await start();
   }
-  function stopRec() {
-    clearInterval(timer.current);
-    setRecording(false);
+  async function stopRec() {
+    const res = await stop();
+    if (res) setRecorded(res);
   }
 
   async function drop() {
@@ -40,8 +37,10 @@ export function MomentComposer({ open, onClose }: { open: boolean; onClose: () =
       if (!text.trim()) return setBusy(false);
       await createMoment('text', text.trim());
     } else {
-      if (seconds < 1) return setBusy(false);
-      await createMoment('voice', '', seconds);
+      if (!recorded) return setBusy(false);
+      const file = new File([recorded.blob], 'moment.webm', { type: recorded.blob.type });
+      const url = (await uploadPublic('stories', file)) ?? URL.createObjectURL(recorded.blob);
+      await createMoment('voice', url, recorded.duration);
     }
     setBusy(false);
     reset();
@@ -90,32 +89,33 @@ export function MomentComposer({ open, onClose }: { open: boolean; onClose: () =
               />
             ) : (
               <div className="grid place-items-center rounded-2xl border border-white/10 bg-black py-8">
-                {!recording && seconds === 0 ? (
-                  <button onClick={startRec} className="grid h-16 w-16 place-items-center rounded-full bg-violet-600 text-white transition active:scale-95">
-                    <Mic className="h-7 w-7" />
-                  </button>
-                ) : recording ? (
+                {recording ? (
                   <button onClick={stopRec} className="flex flex-col items-center gap-3">
                     <span className="grid h-16 w-16 place-items-center rounded-full bg-rose-600 text-white"><Square className="h-6 w-6" /></span>
                     <span className="flex items-center gap-2 text-sm text-white/70"><span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" /> {seconds}s</span>
                   </button>
-                ) : (
+                ) : recorded ? (
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex items-end gap-[3px]">
                       {Array.from({ length: 22 }).map((_, i) => (
                         <span key={i} className="w-[3px] rounded-full bg-violet-400" style={{ height: 6 + ((i * 13) % 26) }} />
                       ))}
                     </div>
-                    <span className="text-sm text-white/60">{seconds}s recorded</span>
-                    <button onClick={() => setSeconds(0)} className="text-xs text-white/40 underline">re-record</button>
+                    <span className="text-sm text-white/60">{recorded.duration}s recorded</span>
+                    <button onClick={() => setRecorded(null)} className="text-xs text-white/40 underline">re-record</button>
                   </div>
+                ) : (
+                  <button onClick={startRec} className="grid h-16 w-16 place-items-center rounded-full bg-violet-600 text-white transition active:scale-95">
+                    <Mic className="h-7 w-7" />
+                  </button>
                 )}
+                {recError && <p className="mt-3 text-xs text-rose-300">{recError}</p>}
               </div>
             )}
 
             <button
               onClick={drop}
-              disabled={busy || (mode === 'text' ? !text.trim() : seconds < 1)}
+              disabled={busy || (mode === 'text' ? !text.trim() : !recorded)}
               className="btn-primary mt-5 w-full"
             >
               {busy ? 'Dropping…' : 'Drop Moment'}

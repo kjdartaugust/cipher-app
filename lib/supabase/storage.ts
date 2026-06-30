@@ -7,11 +7,12 @@ import { createClient } from './client';
  * Returns null in demo mode or on failure (caller can fall back to a sample URL).
  * Buckets: `avatars`, `posts`, `stories` (create them in the Supabase dashboard).
  */
-export async function uploadPublic(bucket: string, file: File): Promise<string | null> {
+export async function uploadPublic(bucket: string, file: File | Blob): Promise<string | null> {
   const supabase = createClient();
   if (!supabase) return null;
   try {
-    const ext = file.name.split('.').pop() ?? 'bin';
+    const name = 'name' in file ? file.name : '';
+    const ext = name.includes('.') ? name.split('.').pop() : (file.type.split('/')[1] ?? 'bin');
     const path = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file, {
       cacheControl: '3600',

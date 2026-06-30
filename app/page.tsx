@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight,
   EyeOff,
@@ -32,12 +32,20 @@ const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } 
 const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
 export default function Landing() {
+  const { scrollY, scrollYProgress } = useScroll();
+  const qY = useTransform(scrollY, [0, 700], [0, -180]);
+  const qScale = useTransform(scrollY, [0, 700], [1, 0.65]);
+  const qOpacity = useTransform(scrollY, [0, 600], [1, 0.2]);
+
   return (
     <main className="relative overflow-hidden">
-      {/* quasar centerpiece behind the hero */}
-      <div className="pointer-events-none absolute inset-x-0 top-[-250px] flex justify-center">
+      {/* scroll-progress beam */}
+      <motion.div style={{ scaleX: scrollYProgress }} className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left bg-cipher-gradient" />
+
+      {/* quasar centerpiece behind the hero — drifts as you scroll */}
+      <motion.div style={{ y: qY, scale: qScale, opacity: qOpacity }} className="pointer-events-none absolute inset-x-0 top-[-250px] flex justify-center">
         <QuasarCore size={620} className="opacity-90" />
-      </div>
+      </motion.div>
 
       {/* nav */}
       <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
@@ -89,7 +97,7 @@ export default function Landing() {
           className="grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3"
         >
           {features.map((f) => (
-            <motion.div key={f.title} variants={item} className="group bg-black p-7 transition hover:bg-surface">
+            <motion.div key={f.title} variants={item} className="group bg-black p-7 transition hover:bg-surface hover:shadow-[inset_0_0_0_1px_rgba(124,58,237,0.35),0_0_40px_-12px_rgba(217,70,239,0.5)]">
               <div className="mb-5 grid h-11 w-11 place-items-center rounded-xl bg-violet-600/15 text-violet-300 transition group-hover:bg-violet-600/25">
                 <f.icon className="h-5 w-5" strokeWidth={1.75} />
               </div>

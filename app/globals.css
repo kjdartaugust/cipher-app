@@ -102,6 +102,17 @@ body {
   animation: orbit-pulse 2.4s ease-in-out infinite;
 }
 
+/* occasional shooting stars / meteors */
+@keyframes shoot {
+  0% { transform: translate3d(0, 0, 0) scaleX(1); opacity: 0; }
+  4% { opacity: 1; }
+  16% { opacity: 1; }
+  22%, 100% { transform: translate3d(60vw, 34vw, 0) scaleX(0.6); opacity: 0; }
+}
+.shooting {
+  animation: shoot 9s ease-in infinite;
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 

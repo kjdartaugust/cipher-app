@@ -21,6 +21,19 @@ export function CosmicBackground() {
             'radial-gradient(ellipse 55% 45% at 12% 75%, rgba(217,70,239,0.10), transparent 55%)',
         }}
       />
+      {/* shooting stars */}
+      {[
+        { top: '8%', left: '12%', delay: '2s' },
+        { top: '22%', left: '55%', delay: '6.5s' },
+        { top: '4%', left: '78%', delay: '11s' },
+      ].map((m, i) => (
+        <span
+          key={`m${i}`}
+          className="shooting absolute h-px w-24 rotate-[28deg] rounded-full bg-gradient-to-r from-transparent via-white/70 to-white"
+          style={{ top: m.top, left: m.left, animationDelay: m.delay, boxShadow: '0 0 6px 1px rgba(255,255,255,0.5)' }}
+        />
+      ))}
+
       {/* starfield */}
       {STARS.map((s, i) => (
         <span

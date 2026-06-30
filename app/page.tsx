@@ -17,6 +17,7 @@ import { AppPreview } from '@/components/marketing/app-preview';
 import { Showcase } from '@/components/marketing/showcase';
 import { DecryptText } from '@/components/marketing/decrypt-text';
 import { MagneticLink } from '@/components/marketing/magnetic';
+import { QuasarCore } from '@/components/marketing/quasar-core';
 
 const features = [
   { icon: Lock, title: 'Messages only you can read', body: 'Every DM and group chat is encrypted on your device with libsodium. The server only ever holds ciphertext.' },
@@ -33,19 +34,10 @@ const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transiti
 export default function Landing() {
   return (
     <main className="relative overflow-hidden">
-      {/* drifting ambient glow */}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/4 -z-10 h-[420px] w-[420px] rounded-full bg-violet-700/20 blur-[120px]"
-        animate={{ x: [0, 60, -20, 0], y: [0, 40, 10, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -top-10 right-1/4 -z-10 h-[360px] w-[360px] rounded-full bg-fuchsia-700/15 blur-[120px]"
-        animate={{ x: [0, -50, 20, 0], y: [0, 30, -10, 0] }}
-        transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-      />
+      {/* quasar centerpiece behind the hero */}
+      <div className="pointer-events-none absolute inset-x-0 top-[-230px] flex justify-center">
+        <QuasarCore size={560} className="opacity-80" />
+      </div>
 
       {/* nav */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">

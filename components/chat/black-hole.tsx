@@ -9,9 +9,9 @@ const DISK = 'conic-gradient(from 0deg, #FDE68A, #FB923C, #D946EF, #7C3AED, #4F8
 export function BlackHole({ size, count }: { size: number; count: number }) {
   const donut = 'radial-gradient(closest-side, transparent 40%, #000 45%, #000 88%, transparent 97%)';
   return (
-    <div className="huecycle relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
+    <div className="relative grid shrink-0 place-items-center" style={{ width: size, height: size, contain: 'layout paint' }}>
       {/* outer halo */}
-      <div className="absolute inset-0 rounded-full opacity-40 blur-3xl" style={{ background: DISK }} />
+      <div className="absolute inset-0 rounded-full opacity-40 blur-2xl" style={{ background: DISK }} />
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}

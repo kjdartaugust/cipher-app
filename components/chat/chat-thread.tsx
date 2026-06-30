@@ -69,7 +69,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   return (
     <div className="relative flex h-[100dvh] flex-col overflow-hidden lg:h-screen">
       {/* growing black hole — its mass is the weight of the conversation */}
-      <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center opacity-[0.28]">
+      <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center overflow-hidden opacity-[0.28]" style={{ contain: 'layout paint' }}>
         <BlackHole size={holeSize} count={meta.convMessages.length} />
       </div>
 

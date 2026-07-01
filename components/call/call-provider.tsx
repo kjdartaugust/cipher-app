@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { useApp } from '@/lib/store';
+import { sendPush } from '@/lib/push';
 
 type CallState = 'idle' | 'outgoing' | 'incoming' | 'connected';
 
@@ -182,6 +183,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
       send(convId, { kind: 'offer', sdp: offer, video, fromName: me.name });
+      // wake the callee even if their app is closed
+      sendPush({ userIds: [peerId], title: me.name, body: `Incoming ${video ? 'video' : 'voice'} call`, url: `/messages/${convId}`, tag: `call-${convId}`, call: true });
     } catch {
       alert('Could not access your microphone/camera.');
       cleanup();

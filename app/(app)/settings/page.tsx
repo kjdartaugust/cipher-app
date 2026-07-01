@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, KeyRound, Lock, ShieldCheck, Trash2, UserX } from 'lucide-react';
+import { AlertTriangle, Bell, KeyRound, Lock, ShieldCheck, Trash2, UserX } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
 import { Avatar } from '@/components/ui/avatar';
 import { useApp } from '@/lib/store';
 import { IS_DEMO } from '@/lib/config';
+import { disablePush, enablePush, pushPermission, pushSupported } from '@/lib/push';
 
 export default function SettingsPage() {
   const { me, blocked, userById, toggleBlock, setPrivacy, changePassword, deleteAccount, myFingerprint } = useApp();
@@ -23,9 +24,27 @@ export default function SettingsPage() {
   const [confirming, setConfirming] = useState(false);
   const [delBusy, setDelBusy] = useState(false);
 
+  // notifications
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const supported = pushSupported();
+
   useEffect(() => {
     myFingerprint().then(setFingerprint).catch(() => {});
+    setPushOn(pushPermission() === 'granted');
   }, [myFingerprint]);
+
+  async function togglePush(on: boolean) {
+    setPushBusy(true);
+    if (on) {
+      const ok = await enablePush(me.id);
+      setPushOn(ok);
+    } else {
+      await disablePush();
+      setPushOn(false);
+    }
+    setPushBusy(false);
+  }
 
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +81,25 @@ export default function SettingsPage() {
             {pwMsg && <p className={`rounded-lg px-3 py-2 text-xs ${pwMsg.ok ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}`}>{pwMsg.text}</p>}
             <button type="submit" disabled={pwBusy} className="btn-primary text-sm"><KeyRound className="h-4 w-4" /> {pwBusy ? 'Updating…' : 'Update password'}</button>
           </form>
+        </Section>
+
+        {/* Notifications */}
+        <Section title="Notifications" icon={Bell}>
+          <label className="flex items-center justify-between gap-4">
+            <span>
+              <span className="block text-sm font-medium">Background notifications</span>
+              <span className="block text-xs text-white/50">
+                Get alerted about messages and calls even when Cipher isn&apos;t open. Message
+                content is never sent — just a nudge.
+              </span>
+            </span>
+            <Toggle on={pushOn} onChange={(v) => !pushBusy && togglePush(v)} />
+          </label>
+          {!supported && <p className="text-xs text-amber-300/80">This browser doesn&apos;t support push notifications.</p>}
+          {supported && pushPermission() === 'denied' && (
+            <p className="text-xs text-amber-300/80">Notifications are blocked in your browser settings — allow them to enable this.</p>
+          )}
+          <p className="text-xs text-white/40">Tip: install Cipher to your home screen (Share → Add to Home Screen) for the most reliable alerts.</p>
         </Section>
 
         {/* Privacy */}

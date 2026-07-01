@@ -3,6 +3,7 @@ import { Inter, Fraunces } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { CosmicBackground } from '@/components/cosmic-background';
+import { PwaRegister } from '@/components/pwa-register';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const fraunces = Fraunces({
@@ -23,6 +24,9 @@ export const metadata: Metadata = {
     description: 'End-to-end encrypted social messaging.',
     type: 'website',
   },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'Cipher', statusBarStyle: 'black-translucent' },
+  icons: { icon: '/icon.svg', apple: '/icon.svg' },
 };
 
 export const viewport: Viewport = {
@@ -36,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className="min-h-screen bg-ink font-sans text-soft antialiased">
         <CosmicBackground />
+        <PwaRegister />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
+    "@types/web-push": "^3.6.4",
     "date-fns": "^4.1.0",
     "eslint-config-next": "^14.2.35",
     "framer-motion": "^11.11.1",
@@ -18,7 +19,8 @@
     "lucide-react": "^0.453.0",
     "next": "^14.2.35",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/libsodium-wrappers": "^0.7.14",

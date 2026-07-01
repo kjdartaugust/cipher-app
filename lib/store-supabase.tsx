@@ -19,6 +19,7 @@ import {
 } from './crypto';
 import { loadKeyPair, storeKeyPair } from './keys';
 import { callSummary } from './utils';
+import { sendPush } from './push';
 import type { KeyPair } from './crypto';
 import type { Message, MessageKind, Post, User } from './types';
 import { useApp } from './app-context';
@@ -462,10 +463,15 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     db.touchConversation(supa(), conversationId);
     db.receiptRead(supa(), [{ message_id: data!.id, user_id: mine() }]);
     const conv = state.conversations.find((c) => c.id === conversationId);
-    conv?.memberIds.filter((id) => id !== mine()).forEach((id) =>
+    const others = conv?.memberIds.filter((id) => id !== mine()) ?? [];
+    others.forEach((id) =>
       db.notify(supa(), { user_id: id, actor_id: mine(), type: 'message', target_id: conversationId, preview: 'sent you a message' })
     );
-  }, [unwrap, state.conversations]);
+    // background push (E2EE-safe: no message content, just a nudge)
+    if (others.length) {
+      sendPush({ userIds: others, title: me.name, body: 'New message', url: `/messages/${conversationId}`, tag: conversationId });
+    }
+  }, [unwrap, state.conversations, me.name]);
 
   const logCall = useCallback(async (conversationId: string, callKind: 'voice' | 'video', durationSec: number | null) => {
     const text = callSummary(callKind, durationSec);

@@ -17,7 +17,7 @@ import { AppPreview } from '@/components/marketing/app-preview';
 import { Showcase } from '@/components/marketing/showcase';
 import { DecryptText } from '@/components/marketing/decrypt-text';
 import { MagneticLink } from '@/components/marketing/magnetic';
-import { QuasarCore } from '@/components/marketing/quasar-core';
+import { QuasarCore, QuasarLite } from '@/components/marketing/quasar-core';
 
 const features = [
   { icon: Lock, title: 'Messages only you can read', body: 'Every DM and group chat is encrypted on your device with libsodium. The server only ever holds ciphertext.' },
@@ -57,7 +57,10 @@ export default function Landing() {
           style={{ scale: qScale, opacity: qOpacity }}
           className="relative mx-auto mb-2 flex h-[150px] items-center justify-center overflow-visible sm:h-[200px]"
         >
-          <div className="scale-[0.5] sm:scale-[0.78] lg:scale-100">
+          {/* mobile: lightweight radial quasar (won't crash on zoom) */}
+          <QuasarLite className="lg:hidden" />
+          {/* desktop: full animated quasar */}
+          <div className="hidden lg:block">
             <QuasarCore size={440} />
           </div>
         </motion.div>

@@ -28,6 +28,7 @@ interface CallCtx {
   hangup: () => void;
   toggleMute: () => void;
   toggleCam: () => void;
+  switchCamera: () => void;
 }
 
 const Ctx = createContext<CallCtx | null>(null);
@@ -63,6 +64,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const isCaller = useRef(false);
   const connectedAt = useRef(0);
   const concluded = useRef(false);
+  const facingMode = useRef<'user' | 'environment'>('user');
 
   // Only the caller posts the call record (avoids duplicates).
   const conclude = useCallback(() => {
@@ -228,8 +230,26 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (t) { t.enabled = !t.enabled; setCamOff(!t.enabled); }
   }, []);
 
+  const switchCamera = useCallback(async () => {
+    if (!callRef.current?.video || !pc.current || !localRef.current) return;
+    const next = facingMode.current === 'user' ? 'environment' : 'user';
+    try {
+      const ns = await navigator.mediaDevices.getUserMedia({ video: { facingMode: next }, audio: false });
+      const nt = ns.getVideoTracks()[0];
+      if (!nt) return;
+      await pc.current.getSenders().find((s) => s.track?.kind === 'video')?.replaceTrack(nt);
+      const old = localRef.current.getVideoTracks()[0];
+      if (old) { localRef.current.removeTrack(old); old.stop(); }
+      localRef.current.addTrack(nt);
+      setLocalStream(new MediaStream(localRef.current.getTracks()));
+      facingMode.current = next;
+    } catch {
+      // no second camera available
+    }
+  }, []);
+
   return (
-    <Ctx.Provider value={{ state, call, localStream, remoteStream, muted, camOff, startCall, accept, decline, hangup, toggleMute, toggleCam }}>
+    <Ctx.Provider value={{ state, call, localStream, remoteStream, muted, camOff, startCall, accept, decline, hangup, toggleMute, toggleCam, switchCamera }}>
       {children}
     </Ctx.Provider>
   );

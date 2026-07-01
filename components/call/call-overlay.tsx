@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Mic, MicOff, Phone, PhoneOff, Video as VideoIcon, VideoOff } from 'lucide-react';
+import { Mic, MicOff, Phone, PhoneOff, SwitchCamera, Video as VideoIcon, VideoOff } from 'lucide-react';
 import { useCall } from './call-provider';
 
 function Stream({ stream, muted, className }: { stream: MediaStream | null; muted?: boolean; className?: string }) {
@@ -14,7 +14,7 @@ function Stream({ stream, muted, className }: { stream: MediaStream | null; mute
 }
 
 export function CallOverlay() {
-  const { state, call, localStream, remoteStream, muted, camOff, accept, decline, hangup, toggleMute, toggleCam } = useCall();
+  const { state, call, localStream, remoteStream, muted, camOff, accept, decline, hangup, toggleMute, toggleCam, switchCamera } = useCall();
   const [secs, setSecs] = useState(0);
 
   useEffect(() => {
@@ -84,6 +84,11 @@ export function CallOverlay() {
         {showVideo && (
           <Action onClick={toggleCam} className={camOff ? 'bg-white/20' : 'bg-white/10'} label="Camera">
             {camOff ? <VideoOff className="h-6 w-6" /> : <VideoIcon className="h-6 w-6" />}
+          </Action>
+        )}
+        {showVideo && (
+          <Action onClick={switchCamera} className="bg-white/10" label="Flip camera">
+            <SwitchCamera className="h-6 w-6" />
           </Action>
         )}
         <Action onClick={hangup} className="bg-rose-600" label="End"><PhoneOff className="h-6 w-6" /></Action>

@@ -3,6 +3,33 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+// A lightweight quasar for mobile — radial gradients only (no conic gradients,
+// no large blurs, one small animated layer) so pinch-zoom can't crash the GPU.
+export function QuasarLite({ className }: { className?: string }) {
+  return (
+    <div aria-hidden className={cn('pointer-events-none relative grid place-items-center', className)} style={{ width: 230, height: 230 }}>
+      {/* inclined disk via a squashed radial gradient */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          transform: 'scaleY(0.34)',
+          background:
+            'radial-gradient(circle, transparent 28%, rgba(255,224,138,0.45) 36%, rgba(217,70,239,0.5) 52%, rgba(124,58,237,0.45) 66%, rgba(34,211,238,0.3) 80%, transparent 90%)',
+        }}
+      />
+      {/* pulsing core */}
+      <motion.div
+        animate={{ scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute rounded-full"
+        style={{ width: 56, height: 56, background: 'radial-gradient(circle, #fff, #FDE68A 40%, rgba(217,70,239,0.5) 70%, transparent 78%)' }}
+      />
+      {/* event horizon */}
+      <div className="absolute rounded-full" style={{ width: 22, height: 22, background: '#02030a', boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 0 18px 4px rgba(124,58,237,0.5)' }} />
+    </div>
+  );
+}
+
 /**
  * A cinematic quasar: an inclined, rotating accretion disk (hot white-gold core
  * bleeding into violet / magenta / cyan), the black-hole silhouette ringed by a

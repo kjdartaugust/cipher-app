@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ComposeCtx.Provider value={() => setComposeOpen(true)}>
         <div className="mx-auto flex w-full max-w-7xl">
           <Sidebar onCompose={() => setComposeOpen(true)} />
-          <main className={cn('min-h-screen flex-1', inThread ? '' : 'pb-28 lg:pb-0')}>{children}</main>
+          <main className={cn('flex-1', inThread ? 'h-[100dvh] overflow-hidden lg:h-screen' : 'min-h-screen pb-28 lg:pb-0')}>{children}</main>
         </div>
         <BottomNav />
         <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />

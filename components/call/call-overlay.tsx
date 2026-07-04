@@ -14,7 +14,7 @@ function Stream({ stream, muted, className }: { stream: MediaStream | null; mute
 }
 
 export function CallOverlay() {
-  const { state, call, localStream, remoteStream, muted, camOff, accept, decline, hangup, toggleMute, toggleCam, switchCamera } = useCall();
+  const { state, call, localStream, remoteStream, muted, camOff, reconnecting, accept, decline, hangup, toggleMute, toggleCam, switchCamera } = useCall();
   const [secs, setSecs] = useState(0);
 
   useEffect(() => {
@@ -25,6 +25,8 @@ export function CallOverlay() {
 
   if (state === 'idle' || !call) return null;
   const mmss = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  // status line under the name / in the top bar during an active call
+  const status = reconnecting ? 'Reconnecting…' : state === 'outgoing' ? 'Ringing…' : mmss;
 
   // Incoming ring
   if (state === 'incoming') {
@@ -54,7 +56,7 @@ export function CallOverlay() {
               {call.peerName.charAt(0)}
             </div>
             <h2 className="headline text-2xl">{call.peerName}</h2>
-            <p className="mt-1 text-sm text-white/50">{state === 'outgoing' ? 'Ringing…' : mmss}</p>
+            <p className={`mt-1 text-sm ${reconnecting ? 'text-amber-300' : 'text-white/50'}`}>{status}</p>
             {/* hidden audio so the call is audible */}
             <Stream stream={remoteStream} className="hidden" />
           </div>
@@ -72,7 +74,7 @@ export function CallOverlay() {
       {showVideo && (
         <div className="absolute inset-x-0 top-0 flex items-center justify-center gap-2 bg-gradient-to-b from-black/60 to-transparent p-4 text-sm">
           <span className="font-semibold">{call.peerName}</span>
-          <span className="text-white/60">· {state === 'outgoing' ? 'Ringing…' : mmss}</span>
+          <span className={reconnecting ? 'text-amber-300' : 'text-white/60'}>· {status}</span>
         </div>
       )}
 

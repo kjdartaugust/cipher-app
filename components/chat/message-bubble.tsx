@@ -27,6 +27,8 @@ export function MessageBubble({
   const { me, userById, reactToMessage, deleteMessage, editMessage, conversations } = useApp();
   const mine = message.senderId === me.id;
   const sender = userById(message.senderId);
+  // images get their own rounded frame; text / voice / file sit in a chat bubble
+  const hasBubble = message.kind !== 'image';
   const [menu, setMenu] = useState(false);
   const [picker, setPicker] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -65,9 +67,9 @@ export function MessageBubble({
   return (
     <Wrap mine={mine} showAvatar={showAvatar} sender={sender} isGroup={isGroup}>
       <div className={cn('group relative max-w-[80%]', mine && 'flex flex-col items-end')}>
-        {!mine && (
-          <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-violet-400">
-            {isGroup ? sender.name : sender.name}
+        {!mine && isGroup && (
+          <p className="mb-1 px-1 text-[11px] font-semibold text-violet-300">
+            {sender.name}
           </p>
         )}
 
@@ -85,8 +87,15 @@ export function MessageBubble({
 
         <div
           className={cn(
-            'relative text-[15px] leading-relaxed text-white',
-            mine ? 'text-right' : 'text-left'
+            'relative',
+            hasBubble
+              ? cn(
+                  'px-3.5 py-2 text-[15px] leading-relaxed',
+                  mine
+                    ? 'rounded-2xl rounded-br-md bg-violet-600 text-white shadow-sm shadow-violet-950/40'
+                    : 'rounded-2xl rounded-bl-md border border-white/5 bg-white/[0.06] text-white'
+                )
+              : 'text-[15px] leading-relaxed text-white'
           )}
         >
           {editing ? (
@@ -102,7 +111,7 @@ export function MessageBubble({
                   }
                   if (e.key === 'Escape') setEditing(false);
                 }}
-                className="bg-transparent text-white outline-none"
+                className="w-full bg-transparent text-base text-white outline-none placeholder:text-white/40"
               />
               <button
                 onClick={() => {
@@ -117,9 +126,9 @@ export function MessageBubble({
           ) : message.kind === 'voice' ? (
             <VoiceNote duration={message.meta?.duration ?? 8} mine={mine} src={message.plaintext || undefined} />
           ) : message.kind === 'image' ? (
-            <span className="group/img relative block">
+            <span className="group/img relative block overflow-hidden rounded-2xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={message.plaintext} alt="" className="max-h-72 rounded-lg" />
+              <img src={message.plaintext} alt="" className="max-h-72 rounded-2xl" />
               <button
                 onClick={() => downloadImage(message.plaintext ?? '')}
                 title="Download"
@@ -136,11 +145,17 @@ export function MessageBubble({
             <span className="whitespace-pre-wrap break-words">{message.plaintext}</span>
           )}
 
-          <span className={cn('mt-0.5 flex items-center gap-1 text-[10px] text-white/30', mine ? 'justify-end' : 'justify-start')}>
-            <Lock className="h-2.5 w-2.5 text-violet-400/50" strokeWidth={2.5} />
+          <span
+            className={cn(
+              'mt-1 flex select-none items-center gap-1 text-[10px]',
+              mine ? 'justify-end' : 'justify-start',
+              mine && hasBubble ? 'text-white/60' : 'text-white/35'
+            )}
+          >
+            <Lock className={cn('h-2.5 w-2.5', mine && hasBubble ? 'text-white/60' : 'text-violet-400/60')} strokeWidth={2.5} />
             {message.editedAt && <span>edited ·</span>}
             {clockTime(message.createdAt)}
-            {mine && (read ? <CheckCheck className="h-3 w-3 text-violet-300" /> : delivered ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
+            {mine && (read ? <CheckCheck className="h-3 w-3 text-white" /> : delivered ? <CheckCheck className="h-3 w-3 text-white/55" /> : <Check className="h-3 w-3 text-white/55" />)}
           </span>
         </div>
 
@@ -167,7 +182,7 @@ export function MessageBubble({
         {/* hover actions */}
         <div
           className={cn(
-            'absolute top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition group-hover:opacity-100',
+            'absolute top-1/2 hidden -translate-y-1/2 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 lg:flex',
             mine ? '-left-24' : '-right-24'
           )}
         >

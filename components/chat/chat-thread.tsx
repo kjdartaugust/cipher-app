@@ -28,6 +28,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   const [showSafety, setShowSafety] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const meta = useConversationMeta(conv ?? ({ id: '', isGroup: false, memberIds: [me.id], createdAt: 0, lastMessageAt: 0 } as any));
 
@@ -40,6 +41,48 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
     setChatting(true);
     return () => setChatting(false);
   }, [setChatting]);
+
+  // Composer + keyboard handling. When the keyboard is CLOSED we do nothing and
+  // let the CSS height (100dvh) fill the visible viewport — header at top,
+  // composer at bottom. Only while a text field is focused (keyboard OPEN) do we
+  // shrink the thread to window.visualViewport.height, since iOS Safari never
+  // shrinks 100dvh for the keyboard. Forcing the height at all times is wrong:
+  // Safari under-reports visualViewport.height on first load and collapses it.
+  useEffect(() => {
+    const el = rootRef.current;
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
+
+    if (!el || !vv) {
+      return () => { document.body.style.overflow = prevOverflow; };
+    }
+
+    const desktop = () => window.matchMedia('(min-width: 1024px)').matches;
+    const isField = (n: Element | null) => !!n && (n.tagName === 'TEXTAREA' || n.tagName === 'INPUT');
+    const update = () => {
+      if (desktop() || !isField(document.activeElement)) {
+        el.style.height = ''; // keyboard closed → fall back to CSS 100dvh
+        return;
+      }
+      el.style.height = `${vv.height}px`; // keyboard open → sit above it
+      bottomRef.current?.scrollIntoView({ block: 'end' });
+    };
+
+    const onFocusOut = () => setTimeout(update, 50); // let activeElement settle
+    document.addEventListener('focusin', update);
+    document.addEventListener('focusout', onFocusOut);
+    vv.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener('focusin', update);
+      document.removeEventListener('focusout', onFocusOut);
+      vv.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,7 +110,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   const holeSize = Math.min(520, 150 + Math.sqrt(meta.convMessages.length) * 38);
 
   return (
-    <div className="relative flex h-[100dvh] flex-col overflow-hidden lg:h-screen">
+    <div ref={rootRef} className="relative flex h-[100dvh] flex-col overflow-hidden lg:h-screen">
       {/* growing black hole — its mass is the weight of the conversation */}
       <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center overflow-hidden opacity-[0.28]" style={{ contain: 'layout paint' }}>
         <BlackHole size={holeSize} count={meta.convMessages.length} />
@@ -128,12 +171,12 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
           <p className="flex items-center gap-1.5 font-medium text-cipher-200">
             <ShieldCheck className="h-3.5 w-3.5" /> Safety number — verify this matches on both devices
           </p>
-          <p className="mt-1 font-mono text-white/60">{fingerprint || 'calculating…'}</p>
+          <p className="mt-1 break-all font-mono text-white/60">{fingerprint || 'calculating…'}</p>
         </motion.div>
       )}
 
       {/* messages */}
-      <div className="relative z-10 flex flex-1 flex-col gap-1.5 overflow-y-auto py-4">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden py-4">
         <div className="mx-auto mb-3 flex max-w-sm items-center gap-2 rounded-full bg-white/5 px-3.5 py-1.5 text-center text-[11px] text-white/40">
           <ShieldCheck className="h-3.5 w-3.5 text-cipher-400" />
           Messages are end-to-end encrypted. No one outside this chat can read them.

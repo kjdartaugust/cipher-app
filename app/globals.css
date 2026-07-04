@@ -88,11 +88,11 @@ main {
   background: conic-gradient(from 180deg, #22D3EE, #4F8BFF, #7C3AED, #D946EF, #22D3EE);
 }
 
-/* frosted command bar — deep space glass */
+/* command bar — solid deep-space pill (no backdrop-filter: blurring the
+   backdrop of a fixed element over scrolling content re-rasterizes every
+   frame and makes the nav lag/stutter on mobile) */
 .frost {
-  background: rgba(8, 10, 24, 0.6);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  background: rgba(11, 13, 28, 0.96);
 }
 
 .glow-violet {

@@ -137,39 +137,45 @@ export function MessageComposer({
           </button>
         </div>
       ) : (
-        <div className="flex items-end gap-1.5 p-3">
-          <button onClick={() => setEmoji((s) => !s)} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white">
-            <Smile className="h-5 w-5" />
-          </button>
-          <button onClick={() => imgRef.current?.click()} disabled={uploading} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-50">
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
-          </button>
-          <button onClick={() => fileRef.current?.click()} disabled={uploading} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-50">
-            <Paperclip className="h-5 w-5" />
-          </button>
+        <div className="flex items-end gap-2 p-3">
           <input ref={imgRef} type="file" accept="image/*" hidden onChange={attachImage} />
           <input ref={fileRef} type="file" hidden onChange={attachFile} />
 
-          <textarea
-            value={text}
-            onChange={(e) => { setText(e.target.value); startTyping(conversationId); }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            rows={1}
-            placeholder="Message — encrypted"
-            className="max-h-32 flex-1 resize-none rounded-2xl bg-white/5 px-4 py-2.5 text-[15px] outline-none placeholder:text-white/30 focus:bg-white/10"
-          />
+          <div className="flex flex-1 items-end gap-0.5 rounded-[24px] border border-white/10 bg-white/[0.05] px-1.5 py-1 transition focus-within:bg-white/[0.08]">
+            <button onClick={() => setEmoji((s) => !s)} className="shrink-0 rounded-full p-2 text-white/50 transition hover:text-white" aria-label="Emoji">
+              <Smile className="h-5 w-5" />
+            </button>
+
+            <textarea
+              value={text}
+              onChange={(e) => { setText(e.target.value); startTyping(conversationId); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              rows={1}
+              placeholder="Message — encrypted"
+              // text-base (16px) is required: iOS Safari auto-zooms on focus for
+              // any input under 16px, which shoves the header/composer icons off-screen.
+              className="max-h-32 flex-1 resize-none bg-transparent px-1 py-2 text-base leading-snug outline-none placeholder:text-white/30"
+            />
+
+            <button onClick={() => imgRef.current?.click()} disabled={uploading} className="shrink-0 rounded-full p-2 text-white/50 transition hover:text-white disabled:opacity-50" aria-label="Photo">
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+            </button>
+            <button onClick={() => fileRef.current?.click()} disabled={uploading} className="shrink-0 rounded-full p-2 text-white/50 transition hover:text-white disabled:opacity-50" aria-label="Attach file">
+              <Paperclip className="h-5 w-5" />
+            </button>
+          </div>
 
           {text.trim() ? (
-            <button onClick={send} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cipher-gradient text-white transition active:scale-90">
+            <button onClick={send} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-cipher-gradient text-white shadow-lg shadow-violet-950/30 transition active:scale-90" aria-label="Send">
               <Send className="h-5 w-5" />
             </button>
           ) : (
-            <button onClick={startRec} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white">
+            <button onClick={startRec} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/60 transition hover:text-white active:scale-90" aria-label="Record voice">
               <Mic className="h-5 w-5" />
             </button>
           )}

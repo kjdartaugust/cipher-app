@@ -6,6 +6,30 @@ export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('shimmer animate-shimmer rounded-lg', className)} />;
 }
 
+// Neutral page placeholder — shown the instant a route is tapped, while its
+// server payload streams in. Keeps navigation feeling immediate.
+export function PageSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-[640px] border-x border-white/10">
+      <div className="border-b border-white/10 px-5 pb-3 pt-5 sm:px-8">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="mt-2 h-8 w-40" />
+      </div>
+      <div className="space-y-4 p-5 sm:px-8">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-2.5 w-2/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // A premium app-shell placeholder shown while keys generate / data loads.
 export function FeedSkeleton() {
   return (

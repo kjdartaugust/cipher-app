@@ -23,6 +23,7 @@ interface CallCtx {
   remoteStream: MediaStream | null;
   muted: boolean;
   camOff: boolean;
+  reconnecting: boolean;
   startCall: (convId: string, peerId: string, peerName: string, video: boolean) => void;
   accept: () => void;
   decline: () => void;
@@ -54,11 +55,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
 
   const sb = useRef(createClient());
   const pc = useRef<RTCPeerConnection | null>(null);
   const channels = useRef<Record<string, RealtimeChannel>>({});
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localRef = useRef<MediaStream | null>(null);
   const callRef = useRef<ActiveCall | null>(null);
   callRef.current = call;
@@ -81,7 +84,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     channels.current[convId]?.send({ type: 'broadcast', event: 'signal', payload: { ...payload, from: me.id } });
   }, [me.id]);
 
+  const clearGrace = useCallback(() => {
+    if (graceTimer.current) { clearTimeout(graceTimer.current); graceTimer.current = null; }
+  }, []);
+
   const cleanup = useCallback(() => {
+    clearGrace();
     pc.current?.getSenders().forEach((s) => s.track?.stop());
     pc.current?.close();
     pc.current = null;
@@ -92,9 +100,18 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setRemoteStream(null);
     setMuted(false);
     setCamOff(false);
+    setReconnecting(false);
     setState('idle');
     setCall(null);
-  }, []);
+  }, [clearGrace]);
+
+  // End the call for real: tell the peer, log it, tear down. Used when the
+  // connection can't recover (e.g. one side backgrounded on iOS and stayed away).
+  const endGracefully = useCallback(() => {
+    if (callRef.current) send(callRef.current.convId, { kind: 'hangup' });
+    conclude();
+    cleanup();
+  }, [send, conclude, cleanup]);
 
   const buildPeer = useCallback((convId: string) => {
     const peer = new RTCPeerConnection(ICE);
@@ -103,14 +120,24 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     };
     peer.ontrack = (e) => setRemoteStream(e.streams[0]);
     peer.onconnectionstatechange = () => {
-      if (['failed', 'disconnected', 'closed'].includes(peer.connectionState)) {
-        // give it a moment; if truly gone, end
-        if (peer.connectionState === 'failed') cleanup();
+      const st = peer.connectionState;
+      if (st === 'connected') {
+        // recovered (or first connect) — clear any pending "give up" timer
+        clearGrace();
+        setReconnecting(false);
+      } else if (st === 'disconnected') {
+        // transient — usually one side backgrounded. Show "Reconnecting…" and
+        // give it a window to come back before we conclude the call.
+        setReconnecting(true);
+        clearGrace();
+        graceTimer.current = setTimeout(endGracefully, 15000);
+      } else if (st === 'failed') {
+        endGracefully();
       }
     };
     pc.current = peer;
     return peer;
-  }, [send, cleanup]);
+  }, [send, clearGrace, endGracefully]);
 
   async function getMedia(video: boolean) {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video });
@@ -118,6 +145,21 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setLocalStream(stream);
     return stream;
   }
+
+  // Coming back to the foreground (iOS suspends WebRTC while the PWA is
+  // backgrounded). If the connection is limping, nudge ICE to re-establish
+  // instead of leaving a frozen call.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden) return;
+      const peer = pc.current;
+      if (peer && callRef.current && (peer.connectionState === 'disconnected' || peer.connectionState === 'failed')) {
+        peer.restartIce?.();
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
 
   // ── signaling: subscribe to a call channel per conversation ──
   useEffect(() => {
@@ -252,7 +294,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ state, call, localStream, remoteStream, muted, camOff, startCall, accept, decline, hangup, toggleMute, toggleCam, switchCamera }}>
+    <Ctx.Provider value={{ state, call, localStream, remoteStream, muted, camOff, reconnecting, startCall, accept, decline, hangup, toggleMute, toggleCam, switchCamera }}>
       {children}
     </Ctx.Provider>
   );

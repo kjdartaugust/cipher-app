@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, CheckCheck, CornerUpLeft, Download, Lock, Pencil, Phone, Smile, Trash2, Video } from 'lucide-react';
+import { Check, CheckCheck, Copy, CornerUpLeft, Download, Lock, Pencil, Phone, Smile, Trash2, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { VoiceNote } from './voice-note';
 import { useApp } from '@/lib/store';
@@ -29,10 +30,25 @@ export function MessageBubble({
   const sender = userById(message.senderId);
   // images get their own rounded frame; text / voice / file sit in a chat bubble
   const hasBubble = message.kind !== 'image';
-  const [menu, setMenu] = useState(false);
+  const [menu, setMenu] = useState(false); // mobile long-press sheet
   const [picker, setPicker] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.plaintext ?? '');
+  const isText = message.kind === 'text';
+
+  // Long-press (touch) opens the mobile action sheet. Desktop keeps the
+  // hover bar; this only fires on touch devices.
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPress = () => {
+    if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; }
+  };
+  const startPress = () => {
+    cancelPress();
+    pressTimer.current = setTimeout(() => {
+      navigator.vibrate?.(8);
+      setMenu(true);
+    }, 450);
+  };
 
   const conv = conversations.find((c) => c.id === message.conversationId);
   const recipients = conv ? conv.memberIds.filter((id) => id !== me.id) : [];
@@ -86,8 +102,12 @@ export function MessageBubble({
         )}
 
         <div
+          onTouchStart={startPress}
+          onTouchEnd={cancelPress}
+          onTouchMove={cancelPress}
+          onContextMenu={(e) => { if (window.matchMedia('(pointer: coarse)').matches) e.preventDefault(); }}
           className={cn(
-            'relative',
+            'relative select-none [-webkit-touch-callout:none] lg:select-auto',
             hasBubble
               ? cn(
                   'px-3.5 py-2 text-[15px] leading-relaxed',
@@ -217,8 +237,86 @@ export function MessageBubble({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* mobile long-press action sheet — portaled so overflow/transform
+            ancestors in the chat can't clip it */}
+        {typeof document !== 'undefined' &&
+          createPortal(
+            <AnimatePresence>
+              {menu && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[90] lg:hidden"
+                >
+                  <div className="absolute inset-0 bg-black/60" onClick={() => setMenu(false)} />
+                  <motion.div
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 40 }}
+                    className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-white/10 bg-ink p-2 pb-[calc(env(safe-area-inset-bottom)+10px)]"
+                  >
+                    <div className="mx-auto mb-2 mt-1 h-1 w-10 rounded-full bg-white/20" />
+                    <div className="mb-1 flex items-center justify-around px-3 py-1.5">
+                      {QUICK.map((e) => (
+                        <button
+                          key={e}
+                          onClick={() => { reactToMessage(message.id, e); setMenu(false); }}
+                          className="text-2xl transition active:scale-125"
+                        >
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="my-1 h-px bg-white/10" />
+                    <SheetRow icon={<CornerUpLeft className="h-5 w-5" />} label="Reply" onClick={() => { onReply(message); setMenu(false); }} />
+                    {isText && (
+                      <SheetRow
+                        icon={<Copy className="h-5 w-5" />}
+                        label="Copy"
+                        onClick={() => { navigator.clipboard?.writeText(message.plaintext ?? '').catch(() => {}); setMenu(false); }}
+                      />
+                    )}
+                    {mine && isText && (
+                      <SheetRow
+                        icon={<Pencil className="h-5 w-5" />}
+                        label="Edit"
+                        onClick={() => { setDraft(message.plaintext ?? ''); setEditing(true); setMenu(false); }}
+                      />
+                    )}
+                    {mine && (
+                      <SheetRow
+                        icon={<Trash2 className="h-5 w-5" />}
+                        label="Delete"
+                        destructive
+                        onClick={() => { deleteMessage(message.id); setMenu(false); }}
+                      />
+                    )}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            document.body
+          )}
       </div>
     </Wrap>
+  );
+}
+
+function SheetRow({ icon, label, onClick, destructive }: { icon: React.ReactNode; label: string; onClick: () => void; destructive?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] transition active:bg-white/10',
+        destructive ? 'text-rose-400' : 'text-white'
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 

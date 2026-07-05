@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { PenSquare, Search, ShieldCheck } from 'lucide-react';
@@ -12,11 +12,25 @@ import type { Conversation } from '@/lib/types';
 import { cn, timeAgo } from '@/lib/utils';
 
 export function ConversationList() {
-  const { conversations } = useApp();
+  const { conversations, messages } = useApp();
   const [query, setQuery] = useState('');
   const [newChat, setNewChat] = useState(false);
 
-  const sorted = [...conversations].sort((a, b) => b.lastMessageAt - a.lastMessageAt);
+  // Sort by each conversation's newest message time — the same source the row's
+  // timestamp/preview use — so the order always matches what's shown. Sorting by
+  // the stored conv.lastMessageAt desyncs whenever a code path adds a message
+  // without bumping it (e.g. logCall, or before an incoming refetch lands).
+  const lastActivity = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const m of messages) {
+      if (m.createdAt > (map[m.conversationId] ?? 0)) map[m.conversationId] = m.createdAt;
+    }
+    return map;
+  }, [messages]);
+
+  const sorted = [...conversations].sort(
+    (a, b) => (lastActivity[b.id] ?? b.lastMessageAt) - (lastActivity[a.id] ?? a.lastMessageAt)
+  );
 
   return (
     <div className="flex h-[100dvh] flex-col border-r border-white/5 pb-[max(5rem,env(safe-area-inset-bottom))] lg:h-screen lg:pb-0">

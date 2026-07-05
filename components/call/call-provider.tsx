@@ -189,7 +189,38 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   async function handleSignal(convId: string, p: any) {
     if (p.kind === 'offer') {
-      if (callRef.current) { send(convId, { kind: 'busy' }); return; }
+      const existing = callRef.current;
+      if (existing) {
+        // Glare: we both dialed each other at the same moment, so each of us is
+        // mid-outgoing and sees the other's offer. If both just send "busy" the
+        // two calls cancel and nothing connects. Resolve it deterministically —
+        // the lower userId stays the caller; the other abandons its own offer
+        // and answers this one, so the call goes through either way.
+        const glare = existing.peerId === p.from && isCaller.current && connectedAt.current === 0;
+        if (glare && me.id < p.from) {
+          return; // I win — keep my outgoing offer; ignore theirs (they'll answer mine)
+        }
+        if (glare) {
+          // I lose — tear down my outgoing attempt and answer their offer.
+          pc.current?.getSenders().forEach((s) => s.track?.stop());
+          pc.current?.close();
+          pc.current = null;
+          localRef.current?.getTracks().forEach((t) => t.stop());
+          localRef.current = null;
+          pendingIce.current = [];
+          isCaller.current = false;
+          concluded.current = false;
+          connectedAt.current = 0;
+          const incoming = { convId, peerId: p.from, peerName: p.fromName ?? existing.peerName, video: !!p.video, offer: p.sdp };
+          callRef.current = incoming; // so accept() sees it synchronously
+          setCall(incoming);
+          await accept();
+          return;
+        }
+        // Genuinely busy — a different peer, or already in a connected call.
+        send(convId, { kind: 'busy' });
+        return;
+      }
       isCaller.current = false;
       concluded.current = false;
       connectedAt.current = 0;

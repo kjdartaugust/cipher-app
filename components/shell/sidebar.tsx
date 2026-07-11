@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LogOut, PenSquare, SlidersHorizontal } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
-import { Avatar } from '@/components/ui/avatar';
+import { StatusAvatar } from '@/components/shell/status-control';
 import { NAV_ITEMS } from '@/lib/nav';
 import { useApp } from '@/lib/store';
 import { IS_DEMO } from '@/lib/config';
@@ -61,11 +61,11 @@ export function Sidebar({ onCompose }: { onCompose: () => void }) {
       </nav>
 
       <div className="mt-4 flex items-center gap-2">
+        <StatusAvatar />
         <Link
           href="/profile"
           className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-white/5"
         >
-          <Avatar src={me.avatar} alt={me.name} size={40} online />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{me.name}</p>
             <p className="truncate text-xs text-white/45">@{me.username}</p>

@@ -10,6 +10,7 @@ import type {
   Story,
   User,
 } from './types';
+import type { PresenceStatus, Visibility } from './presence';
 
 export interface AppState {
   users: User[];
@@ -27,8 +28,11 @@ export interface AppContextValue extends AppState {
   needsUnlock: boolean; // true when this device's key can't decrypt — prompt for password
   unlock: (password: string) => Promise<boolean>;
   // live presence (Supabase Realtime): userId -> status
-  presence: Record<string, { status: 'online' | 'chatting'; at: number }>;
+  presence: Record<string, { status: PresenceStatus; at: number }>;
   setChatting: (on: boolean) => void;
+  // my own visibility (Active / Away / Invisible)
+  myStatus: Visibility;
+  setStatus: (v: Visibility) => void;
   // social
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;

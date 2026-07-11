@@ -16,11 +16,12 @@ import {
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { useApp } from '@/lib/store';
+import { resolveStatus } from '@/lib/presence';
 import type { Post } from '@/lib/types';
 import { cn, compactNumber, timeAgo } from '@/lib/utils';
 
 export function PostCard({ post, trending }: { post: Post; trending?: boolean }) {
-  const { userById, me, toggleLike, toggleSave, sharePost, addComment, deletePost, editPost } = useApp();
+  const { userById, me, toggleLike, toggleSave, sharePost, addComment, deletePost, editPost, presence } = useApp();
   const author = userById(post.authorId);
   const liked = post.likes.includes(me.id);
   const saved = post.saves.includes(me.id);
@@ -63,7 +64,7 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
       {/* byline */}
       <div className="mb-3 flex items-center gap-3">
         <Link href={`/u/${author.username}`}>
-          <Avatar src={author.avatar} alt={author.name} size={38} online={author.online} />
+          <Avatar src={author.avatar} alt={author.name} size={38} status={resolveStatus(presence[author.id], author.online)} />
         </Link>
         <div className="min-w-0 flex-1">
           <Link href={`/u/${author.username}`} className="flex items-center gap-1.5">

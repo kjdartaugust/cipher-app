@@ -13,6 +13,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/post/post-card';
 import { PostCard } from '@/components/post/post-card';
 import { useApp } from '@/lib/store';
+import { resolveStatus } from '@/lib/presence';
 import type { Post } from '@/lib/types';
 import { compactNumber, timeAgo } from '@/lib/utils';
 
@@ -148,7 +149,7 @@ function SwipeCard({ post, onLike, onSkip, onExpand }: { post: Post; onLike: () 
 }
 
 function CardShell({ post, dim, children }: { post: Post; dim?: boolean; children?: React.ReactNode }) {
-  const { userById } = useApp();
+  const { userById, presence } = useApp();
   const author = userById(post.authorId);
   return (
     <div className={`relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-white/12 bg-surface ${dim ? 'opacity-70' : ''}`}>
@@ -162,7 +163,7 @@ function CardShell({ post, dim, children }: { post: Post; dim?: boolean; childre
       )}
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center gap-3">
-          <Avatar src={author.avatar} alt={author.name} size={40} online={author.online} />
+          <Avatar src={author.avatar} alt={author.name} size={40} status={resolveStatus(presence[author.id], author.online)} />
           <div className="min-w-0">
             <span className="flex items-center gap-1">
               <span className="truncate font-bold">{author.name}</span>

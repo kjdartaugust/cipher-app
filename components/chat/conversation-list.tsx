@@ -70,7 +70,7 @@ export function ConversationList() {
 function Row({ conv, query }: { conv: Conversation; query: string }) {
   const params = useParams();
   const active = params?.id === conv.id;
-  const { title, avatar, online, last, unread } = useConversationMeta(conv);
+  const { title, avatar, status, last, unread } = useConversationMeta(conv);
 
   if (query && !title.toLowerCase().includes(query.toLowerCase())) return null;
 
@@ -82,7 +82,7 @@ function Row({ conv, query }: { conv: Conversation; query: string }) {
         active && 'bg-white/[0.06]'
       )}
     >
-      <Avatar src={avatar ?? ''} alt={title} size={52} online={online} />
+      <Avatar src={avatar ?? ''} alt={title} size={52} status={status} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className={cn('truncate', unread ? 'font-bold' : 'font-semibold')}>{title}</span>

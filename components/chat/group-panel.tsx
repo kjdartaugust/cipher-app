@@ -6,12 +6,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Camera, Check, Loader2, LogOut, Pencil, Plus, UserMinus, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { useApp } from '@/lib/store';
+import { resolveStatus } from '@/lib/presence';
 import { uploadPublic } from '@/lib/supabase/storage';
 import type { Conversation } from '@/lib/types';
 
 // Group info + management sheet: rename, avatar, add/remove members, leave.
 export function GroupPanel({ conv, open, onClose }: { conv: Conversation; open: boolean; onClose: () => void }) {
-  const { me, users, userById, blocked, renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup } = useApp();
+  const { me, users, userById, blocked, renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup, presence } = useApp();
   const router = useRouter();
   const [name, setName] = useState(conv.name ?? '');
   const [editingName, setEditingName] = useState(false);
@@ -123,7 +124,7 @@ export function GroupPanel({ conv, open, onClose }: { conv: Conversation; open: 
                 <div className="space-y-1">
                   {members.map((u) => (
                     <div key={u.id} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.03]">
-                      <Avatar src={u.avatar} alt={u.name} size={40} online={u.online} />
+                      <Avatar src={u.avatar} alt={u.name} size={40} status={resolveStatus(presence[u.id], u.online)} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{u.id === me.id ? 'You' : u.name}</p>
                         <p className="truncate text-xs text-white/40">@{u.username}</p>

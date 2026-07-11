@@ -22,6 +22,7 @@ import { callSummary } from './utils';
 import { sendPush } from './push';
 import type { KeyPair } from './crypto';
 import type { Message, MessageKind, Post, User } from './types';
+import type { PresenceStatus, Visibility } from './presence';
 import { useApp } from './app-context';
 
 export { useApp };
@@ -34,8 +35,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const [typing, setTyping] = useState<Record<string, string[]>>({});
   const [blocked, setBlocked] = useState<string[]>([]);
-  const [presence, setPresence] = useState<Record<string, { status: 'online' | 'chatting'; at: number }>>({});
+  const [presence, setPresence] = useState<Record<string, { status: PresenceStatus; at: number }>>({});
   const presenceCh = useRef<RealtimeChannel | null>(null);
+  const [myStatus, setMyStatus] = useState<Visibility>('active');
+  const myStatusRef = useRef<Visibility>('active');
+  const chattingRef = useRef(false);
 
   const sb = useRef<SupabaseClient | null>(null);
   const myId = useRef<string>('');
@@ -305,27 +309,57 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     channel.current = ch;
   }
 
-  // ---- live presence: who is online / in a chat right now ----
+  // ---- live presence: who is online / away / in a call right now ----
+  // What I broadcast depends on my chosen visibility + whether I'm in a call.
+  const applyPresence = useCallback(() => {
+    const ch = presenceCh.current;
+    if (!ch) return;
+    if (myStatusRef.current === 'invisible') { ch.untrack(); return; }
+    const base: PresenceStatus = myStatusRef.current === 'away' ? 'away' : 'online';
+    const status: PresenceStatus = chattingRef.current ? 'chatting' : base;
+    ch.track({ status, at: Date.now() });
+  }, []);
+
   function subscribePresence(supabase: SupabaseClient, userId: string) {
     const ch = supabase.channel('presence:cipher', { config: { presence: { key: userId } } });
     ch.on('presence', { event: 'sync' }, () => {
-      const state = ch.presenceState() as Record<string, { status?: 'online' | 'chatting'; at?: number }[]>;
-      const map: Record<string, { status: 'online' | 'chatting'; at: number }> = {};
+      const state = ch.presenceState() as Record<string, { status?: PresenceStatus; at?: number }[]>;
+      const map: Record<string, { status: PresenceStatus; at: number }> = {};
       for (const [id, metas] of Object.entries(state)) {
         const m = metas[metas.length - 1] ?? {};
-        map[id] = { status: m.status === 'chatting' ? 'chatting' : 'online', at: m.at ?? Date.now() };
+        const s: PresenceStatus = m.status === 'chatting' ? 'chatting' : m.status === 'away' ? 'away' : 'online';
+        map[id] = { status: s, at: m.at ?? Date.now() };
       }
       setPresence(map);
     });
     ch.subscribe((status) => {
-      if (status === 'SUBSCRIBED') ch.track({ status: 'online', at: Date.now() });
+      if (status === 'SUBSCRIBED') applyPresence();
     });
     presenceCh.current = ch;
   }
 
   const setChatting = useCallback((on: boolean) => {
-    presenceCh.current?.track({ status: on ? 'chatting' : 'online', at: Date.now() });
-  }, []);
+    chattingRef.current = on;
+    applyPresence();
+  }, [applyPresence]);
+
+  const setStatus = useCallback((v: Visibility) => {
+    myStatusRef.current = v;
+    setMyStatus(v);
+    try { localStorage.setItem('cipher.status', v); } catch {}
+    applyPresence();
+  }, [applyPresence]);
+
+  // Restore the saved visibility on load.
+  useEffect(() => {
+    let saved: Visibility | null = null;
+    try { saved = localStorage.getItem('cipher.status') as Visibility | null; } catch {}
+    if (saved === 'active' || saved === 'away' || saved === 'invisible') {
+      myStatusRef.current = saved;
+      setMyStatus(saved);
+      applyPresence();
+    }
+  }, [applyPresence]);
 
   // -------------------------------- derived ----------------------------------
   const me: User = useMemo(
@@ -721,7 +755,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     renameGroup, setGroupAvatar, addGroupMembers, removeGroupMember, leaveGroup,
     markAllNotificationsRead, userById, updateProfile, unlock,
     toggleBlock, setPrivacy, changePassword, deleteAccount, myFingerprint, signOut,
-    presence, setChatting,
+    presence, setChatting, myStatus, setStatus,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

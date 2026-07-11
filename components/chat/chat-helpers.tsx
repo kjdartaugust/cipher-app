@@ -1,18 +1,21 @@
 'use client';
 
 import { useApp } from '@/lib/store';
+import { resolveStatus, statusLabel } from '@/lib/presence';
 import type { Conversation } from '@/lib/types';
 
 export function useConversationMeta(conv: Conversation) {
-  const { userById, me, messages } = useApp();
+  const { userById, me, messages, presence } = useApp();
   const others = conv.memberIds.filter((id) => id !== me.id).map(userById);
   const title = conv.isGroup ? conv.name ?? 'Group chat' : others[0]?.name ?? 'Unknown';
   const avatar = conv.isGroup ? conv.avatar ?? others[0]?.avatar : others[0]?.avatar;
-  const online = !conv.isGroup && others[0]?.online;
+  // live presence of the other person (1:1 only)
+  const status = !conv.isGroup && others[0] ? resolveStatus(presence[others[0].id], others[0].online) : undefined;
+  const online = !!status;
   const subtitle = conv.isGroup
     ? `${conv.memberIds.length} members`
-    : others[0]?.online
-      ? 'Active now'
+    : status
+      ? statusLabel(status)
       : `@${others[0]?.username}`;
 
   const convMessages = messages
@@ -23,7 +26,7 @@ export function useConversationMeta(conv: Conversation) {
     (m) => m.senderId !== me.id && !m.readBy.includes(me.id)
   ).length;
 
-  return { others, title, avatar, online, subtitle, last, unread, convMessages };
+  return { others, title, avatar, online, status, subtitle, last, unread, convMessages };
 }
 
 export function lastMessagePreview(

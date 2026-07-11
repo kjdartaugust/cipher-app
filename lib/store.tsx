@@ -538,6 +538,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     unlock: async () => true,
     presence: {},
     setChatting: () => {},
+    myStatus: 'active',
+    setStatus: () => {},
     toggleLike,
     toggleSave,
     sharePost,

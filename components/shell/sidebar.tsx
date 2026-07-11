@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LogOut, PenSquare, SlidersHorizontal } from 'lucide-react';
+import { LogOut, PenSquare, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { StatusAvatar } from '@/components/shell/status-control';
 import { NAV_ITEMS } from '@/lib/nav';
@@ -71,6 +71,11 @@ export function Sidebar({ onCompose }: { onCompose: () => void }) {
             <p className="truncate text-xs text-white/45">@{me.username}</p>
           </div>
         </Link>
+        {me.isAdmin && (
+          <Link href="/admin" title="Admin" className="rounded-xl p-2.5 text-cipher-300/70 transition hover:bg-white/5 hover:text-cipher-200">
+            <ShieldCheck className="h-5 w-5" />
+          </Link>
+        )}
         <Link href="/settings" title="Settings" className="rounded-xl p-2.5 text-white/40 transition hover:bg-white/5 hover:text-white">
           <SlidersHorizontal className="h-5 w-5" />
         </Link>

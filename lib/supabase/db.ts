@@ -94,6 +94,8 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
     online: false,
     lastSeenAt: p.last_seen_at ? Date.parse(p.last_seen_at) : undefined,
     private: p.private ?? false,
+    isAdmin: p.is_admin ?? false,
+    suspended: p.suspended ?? false,
     followers: (follows ?? []).filter((f: any) => f.following_id === p.id).map((f: any) => f.follower_id),
     following: (follows ?? []).filter((f: any) => f.follower_id === p.id).map((f: any) => f.following_id),
   }));

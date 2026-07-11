@@ -12,6 +12,8 @@ export interface User {
   online?: boolean;
   lastSeenAt?: number;   // ms epoch; undefined = never seen / hidden
   private?: boolean;
+  isAdmin?: boolean;     // reveals the nav link only — /admin is gated server-side
+  suspended?: boolean;
 }
 
 export interface Post {

@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Bell, KeyRound, Lock, ShieldCheck, Trash2, UserX } from 'lucide-react';
+import { AlertTriangle, Bell, CircleDot, KeyRound, Lock, Music, ShieldCheck, Trash2, UserX } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
 import { Avatar } from '@/components/ui/avatar';
+import { StatusOptions } from '@/components/shell/status-control';
+import { RingtonePicker } from '@/components/shell/ringtone-picker';
 import { useApp } from '@/lib/store';
 import { IS_DEMO } from '@/lib/config';
 import { disablePush, enablePush, pushPermission, pushSupported } from '@/lib/push';
@@ -68,6 +70,23 @@ export default function SettingsPage() {
       <PageHeader kicker="Account" title="Settings" />
 
       <div className="space-y-8 p-5 sm:p-8">
+        {/* Status */}
+        <Section title="Status" icon={CircleDot}>
+          <p className="-mt-1 text-xs text-white/50">
+            Choose whether people see you as online. <span className="font-medium text-white/70">Invisible</span> hides
+            your presence while you can still see everyone else.
+          </p>
+          <StatusOptions />
+        </Section>
+
+        {/* Ringtone */}
+        <Section title="Ringtone" icon={Music}>
+          <p className="-mt-1 text-xs text-white/50">
+            Choose the sound for incoming calls. Tap <span className="font-medium text-white/70">▶</span> to preview.
+          </p>
+          <RingtonePicker />
+        </Section>
+
         {/* Security */}
         <Section title="Security" icon={ShieldCheck}>
           <Row label="Safety number" hint="Share this with a contact to verify no one is intercepting your messages.">

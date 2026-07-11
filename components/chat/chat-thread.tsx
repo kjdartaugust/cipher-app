@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Phone, ShieldCheck, Video } from 'lucide-react';
+import { ArrowLeft, Music, Phone, ShieldCheck, Video } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { RingtonePicker } from '@/components/shell/ringtone-picker';
 import { CipherBadge } from '@/components/ui/cipher-badge';
 import { BlackHole } from './black-hole';
 import { GroupPanel } from './group-panel';
@@ -19,14 +20,15 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 
 export function ChatThread({ conversationId }: { conversationId: string }) {
-  const { conversations, me, typing, markConversationRead, userById, setChatting } = useApp();
-  const { startCall } = useCall();
+  const { conversations, me, typing, markConversationRead, userById } = useApp();
+  const { startCall, startGroupCall } = useCall();
   const conv = conversations.find((c) => c.id === conversationId);
   const router = useRouter();
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [fingerprint, setFingerprint] = useState('');
   const [showSafety, setShowSafety] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
+  const [showRingtone, setShowRingtone] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -35,12 +37,6 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   useEffect(() => {
     if (conversationId) markConversationRead(conversationId);
   }, [conversationId, meta.convMessages.length, markConversationRead]);
-
-  // Broadcast "in a Cipher" presence while this thread is open.
-  useEffect(() => {
-    setChatting(true);
-    return () => setChatting(false);
-  }, [setChatting]);
 
   // Composer + keyboard handling. When the keyboard is CLOSED we do nothing and
   // let the CSS height (100dvh) fill the visible viewport — header at top,
@@ -128,7 +124,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
           }}
           className="flex min-w-0 flex-1 items-center gap-3 text-left transition hover:opacity-80"
         >
-          <Avatar src={meta.avatar ?? ''} alt={meta.title} size={42} online={meta.online} />
+          <Avatar src={meta.avatar ?? ''} alt={meta.title} size={42} status={meta.status} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{meta.title}</p>
             <div className="flex items-center gap-2">
@@ -157,10 +153,50 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
             </button>
           </>
         )}
+        {conv.isGroup && (
+          <>
+            <button
+              onClick={() => startGroupCall(conversationId, false)}
+              className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white"
+              aria-label="Group voice call"
+            >
+              <Phone className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => startGroupCall(conversationId, true)}
+              className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white"
+              aria-label="Group video call"
+            >
+              <Video className="h-5 w-5" />
+            </button>
+          </>
+        )}
+        {!conv.isGroup && meta.others[0] && (
+          <button
+            onClick={() => setShowRingtone((s) => !s)}
+            className={`rounded-full p-2 hover:bg-white/10 ${showRingtone ? 'text-cipher-300' : 'text-white/50 hover:text-white'}`}
+            aria-label="Ringtone for this chat"
+          >
+            <Music className="h-5 w-5" />
+          </button>
+        )}
         <button onClick={() => setShowSafety((s) => !s)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
           <ShieldCheck className="h-5 w-5" />
         </button>
       </header>
+
+      {showRingtone && !conv.isGroup && meta.others[0] && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className="overflow-hidden border-b border-white/5 bg-white/[0.02] px-4 py-3"
+        >
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-white/60">
+            <Music className="h-3.5 w-3.5" /> Ringtone for {meta.others[0].name}
+          </p>
+          <RingtonePicker contactId={meta.others[0].id} />
+        </motion.div>
+      )}
 
       {showSafety && (
         <motion.div

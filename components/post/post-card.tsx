@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bookmark,
   Check,
+  Flag,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -15,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { ReportDialog } from '@/components/moderation/report-dialog';
 import { useApp } from '@/lib/store';
 import { resolveStatus } from '@/lib/presence';
 import type { Post } from '@/lib/types';
@@ -30,6 +32,7 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
   const [burst, setBurst] = useState(false);
   const [menu, setMenu] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [draft, setDraft] = useState(post.text);
   const mine = post.authorId === me.id;
 
@@ -76,39 +79,48 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
             {trending && <span className="ml-2 text-cipher-300">· Trending</span>}
           </p>
         </div>
-        {mine && (
-          <div className="relative">
-            <button onClick={() => setMenu((m) => !m)} className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white">
-              <MoreHorizontal className="h-5 w-5" />
-            </button>
-            <AnimatePresence>
-              {menu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setMenu(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-white/10 bg-surface shadow-xl"
-                  >
+        <div className="relative">
+          <button onClick={() => setMenu((m) => !m)} className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white">
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
+          <AnimatePresence>
+            {menu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenu(false)} />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-white/10 bg-surface shadow-xl"
+                >
+                  {mine ? (
+                    <>
+                      <button
+                        onClick={() => { setMenu(false); setDraft(post.text); setEditing(true); }}
+                        className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-white hover:bg-white/5"
+                      >
+                        <Pencil className="h-4 w-4" /> Edit post
+                      </button>
+                      <button
+                        onClick={() => { setMenu(false); deletePost(post.id); }}
+                        className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-rose-300 hover:bg-white/5"
+                      >
+                        <Trash2 className="h-4 w-4" /> Delete post
+                      </button>
+                    </>
+                  ) : (
                     <button
-                      onClick={() => { setMenu(false); setDraft(post.text); setEditing(true); }}
+                      onClick={() => { setMenu(false); setReporting(true); }}
                       className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-white hover:bg-white/5"
                     >
-                      <Pencil className="h-4 w-4" /> Edit post
+                      <Flag className="h-4 w-4" /> Report post
                     </button>
-                    <button
-                      onClick={() => { setMenu(false); deletePost(post.id); }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-rose-300 hover:bg-white/5"
-                    >
-                      <Trash2 className="h-4 w-4" /> Delete post
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* body copy */}
@@ -221,6 +233,13 @@ export function PostCard({ post, trending }: { post: Post; trending?: boolean })
           </motion.div>
         )}
       </AnimatePresence>
+
+      {reporting && (
+        <ReportDialog
+          target={{ type: 'post', id: post.id, label: 'this post' }}
+          onClose={() => setReporting(false)}
+        />
+      )}
     </motion.article>
   );
 }

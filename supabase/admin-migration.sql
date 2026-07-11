@@ -82,6 +82,48 @@ create policy "read own reports" on public.reports
   for select using (auth.uid() = reporter_id);
 
 -- ---------------------------------------------------------------------------
+-- Enforcing suspension
+-- ---------------------------------------------------------------------------
+-- A suspended flag that only greys out the UI is theatre — anyone can call the
+-- API directly. Enforce it in the database: a suspended user can still sign in
+-- and read (so they can see they've been suspended, and export nothing new),
+-- but cannot create anything.
+create or replace function public.is_suspended()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select suspended from public.profiles where id = auth.uid()), false);
+$$;
+
+-- Recreate the write policies with the suspension check folded into WITH CHECK,
+-- which governs the rows a user may create or modify. DELETE is deliberately
+-- left alone: a suspended user may still remove their own content.
+drop policy if exists "member can send messages" on public.messages;
+create policy "member can send messages" on public.messages for insert with check (
+  sender_id = auth.uid()
+  and public.is_member(conversation_id)
+  and not public.is_suspended()
+);
+
+drop policy if exists "own posts write" on public.posts;
+create policy "own posts write" on public.posts for all
+  using (auth.uid() = author_id)
+  with check (auth.uid() = author_id and not public.is_suspended());
+
+drop policy if exists "own comments write" on public.comments;
+create policy "own comments write" on public.comments for all
+  using (auth.uid() = author_id)
+  with check (auth.uid() = author_id and not public.is_suspended());
+
+drop policy if exists "own stories write" on public.stories;
+create policy "own stories write" on public.stories for all
+  using (auth.uid() = author_id)
+  with check (auth.uid() = author_id and not public.is_suspended());
+
+-- ---------------------------------------------------------------------------
 -- Grant yourself admin. Run this once, with your own username.
 -- ---------------------------------------------------------------------------
 -- update public.profiles set is_admin = true where username = 'your_username';

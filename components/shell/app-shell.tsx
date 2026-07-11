@@ -3,6 +3,7 @@
 import { createContext, useContext, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { AlertTriangle } from 'lucide-react';
 import { Sidebar } from './sidebar';
 import { BottomNav } from './bottom-nav';
 import { ComposeModal } from '@/components/post/compose-modal';
@@ -18,7 +19,7 @@ const ComposeCtx = createContext<() => void>(() => {});
 export const useCompose = () => useContext(ComposeCtx);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { ready, needsUnlock } = useApp();
+  const { ready, needsUnlock, me } = useApp();
   const [composeOpen, setComposeOpen] = useState(false);
   const pathname = usePathname();
   const inThread = /^\/messages\/[^/]+$/.test(pathname);
@@ -42,6 +43,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <CallProvider>
       <ComposeCtx.Provider value={() => setComposeOpen(true)}>
+        {/* A suspended user's writes are refused by the database, so without
+            this their posts would just silently fail. Say what happened. */}
+        {me.suspended && (
+          <div className="sticky top-0 z-40 flex items-center gap-2 bg-amber-500 px-4 py-2 text-center text-xs font-semibold text-black">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">
+              Your account is suspended. You can read and browse, but not send messages, post or comment.
+            </span>
+          </div>
+        )}
         <div className="mx-auto flex w-full max-w-7xl">
           <Sidebar onCompose={() => setComposeOpen(true)} />
           <main className={cn('flex-1', inThread ? 'h-[100dvh] overflow-hidden lg:h-screen' : 'min-h-screen pb-28 lg:pb-0')}>{children}</main>

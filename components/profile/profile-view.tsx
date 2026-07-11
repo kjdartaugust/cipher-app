@@ -4,9 +4,10 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
-import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, SlidersHorizontal, UserCheck, UserPlus, UserX, X } from 'lucide-react';
+import { Bookmark, Flag, Grid3x3, LogOut, MessageCircle, Settings, SlidersHorizontal, UserCheck, UserPlus, UserX, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusButton } from '@/components/shell/status-control';
+import { ReportDialog } from '@/components/moderation/report-dialog';
 import { StoryViewer } from '@/components/story/story-viewer';
 import { VerifiedBadge, PostCard } from '@/components/post/post-card';
 import { EditProfileModal } from './edit-profile-modal';
@@ -26,6 +27,7 @@ export function ProfileView({ user }: { user: User }) {
   const [editing, setEditing] = useState(false);
   const [openPost, setOpenPost] = useState<Post | null>(null);
   const [viewingStory, setViewingStory] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   // this user's live (non-expired) moments — tap the avatar to view them
   const liveStories = useMemo(
@@ -108,6 +110,14 @@ export function ProfileView({ user }: { user: User }) {
               >
                 <UserX className="h-4 w-4" />
               </button>
+              <button
+                onClick={() => setReporting(true)}
+                className="btn-ghost text-sm text-white/50"
+                aria-label="Report"
+                title="Report"
+              >
+                <Flag className="h-4 w-4" />
+              </button>
             </>
           )}
         </div>
@@ -160,6 +170,13 @@ export function ProfileView({ user }: { user: User }) {
 
       {viewingStory && hasStory && (
         <StoryViewer stories={liveStories} startIndex={0} onClose={() => setViewingStory(false)} />
+      )}
+
+      {reporting && (
+        <ReportDialog
+          target={{ type: 'user', id: user.id, label: `@${user.username}` }}
+          onClose={() => setReporting(false)}
+        />
       )}
 
       {/* tap a grid post to open it (edit/delete via its ··· menu) */}

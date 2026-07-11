@@ -7,7 +7,11 @@ import {
   RefreshCw, ShieldCheck, Users,
 } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
-import { compactNumber } from '@/lib/utils';
+import { UsersPanel } from './users-panel';
+import { ReportsPanel } from './reports-panel';
+import { cn, compactNumber } from '@/lib/utils';
+
+type Tab = 'overview' | 'users' | 'reports';
 
 type Stats = {
   users: { total: number; new7: number; new30: number; suspended: number; admins: number };
@@ -21,6 +25,7 @@ type Stats = {
 };
 
 export function AdminDashboard() {
+  const [tab, setTab] = useState<Tab>('overview');
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,9 +61,35 @@ export function AdminDashboard() {
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         }
-      />
+      >
+        <div className="flex gap-1 px-5 sm:px-8">
+          {(['overview', 'users', 'reports'] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                'relative px-3 pb-2.5 text-sm font-medium capitalize transition',
+                tab === t ? 'text-white' : 'text-white/40 hover:text-white/70'
+              )}
+            >
+              {t}
+              {t === 'reports' && !!stats?.moderation.reportsOpen && (
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-black">
+                  {stats.moderation.reportsOpen}
+                </span>
+              )}
+              {tab === t && (
+                <motion.span layoutId="admin-tab" className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-cipher-400" />
+              )}
+            </button>
+          ))}
+        </div>
+      </PageHeader>
 
-      <div className="space-y-8 p-5 sm:p-8">
+      {tab === 'users' && <div className="p-5 sm:p-8"><UsersPanel /></div>}
+      {tab === 'reports' && <div className="p-5 sm:p-8"><ReportsPanel /></div>}
+
+      <div className={cn('space-y-8 p-5 sm:p-8', tab !== 'overview' && 'hidden')}>
         {/* The thing anyone opening an admin panel for a messaging app assumes
             they can do — read messages — is the one thing that cannot exist. */}
         <div className="flex items-start gap-3 rounded-2xl border border-cipher-500/25 bg-cipher-600/10 p-4">
@@ -128,9 +159,12 @@ export function AdminDashboard() {
                 />
                 <Stat label="Admins" value={stats.users.admins} icon={ShieldCheck} />
               </Grid>
-              <p className="mt-3 text-[11px] text-white/35">
-                User search, suspension and takedowns land here next.
-              </p>
+              <button
+                onClick={() => setTab('reports')}
+                className="mt-3 text-[11px] text-cipher-300/80 underline-offset-2 hover:underline"
+              >
+                Review the queue →
+              </button>
             </Section>
 
             <p className="pt-2 text-center text-[11px] text-white/25">

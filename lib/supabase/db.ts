@@ -92,6 +92,7 @@ export async function loadEverything(supabase: DB, myId: string): Promise<Loaded
     publicKey: p.public_key ?? '',
     verified: p.verified ?? false,
     online: false,
+    lastSeenAt: p.last_seen_at ? Date.parse(p.last_seen_at) : undefined,
     private: p.private ?? false,
     followers: (follows ?? []).filter((f: any) => f.following_id === p.id).map((f: any) => f.follower_id),
     following: (follows ?? []).filter((f: any) => f.follower_id === p.id).map((f: any) => f.following_id),
@@ -254,6 +255,9 @@ export const db = {
 
   updateProfile: (s: DB, id: string, patch: { name?: string; bio?: string; avatar?: string; private?: boolean }) =>
     s.from('profiles').update(patch).eq('id', id),
+
+  touchLastSeen: (s: DB, id: string) =>
+    s.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', id),
 
   insertMoment: (
     s: DB,

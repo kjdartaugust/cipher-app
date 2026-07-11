@@ -12,10 +12,10 @@ import { VerifiedBadge, PostCard } from '@/components/post/post-card';
 import { EditProfileModal } from './edit-profile-modal';
 import type { Post } from '@/lib/types';
 import { useApp } from '@/lib/store';
-import { resolveStatus } from '@/lib/presence';
+import { resolveStatus, presenceLine, dotClass } from '@/lib/presence';
 import { IS_DEMO } from '@/lib/config';
 import type { User } from '@/lib/types';
-import { compactNumber } from '@/lib/utils';
+import { cn, compactNumber } from '@/lib/utils';
 
 export function ProfileView({ user }: { user: User }) {
   const { me, posts, stories, messages, toggleFollow, createConversation, userById, signOut, blocked, toggleBlock, presence } = useApp();
@@ -66,6 +66,12 @@ export function ProfileView({ user }: { user: User }) {
           {user.verified && <VerifiedBadge />}
         </h1>
         <p className="kicker mt-2">@{user.username}</p>
+        {!isMe && presenceLine(resolveStatus(presence[user.id], user.online), user.lastSeenAt) && (
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/45">
+            <span className={cn('h-1.5 w-1.5 rounded-full', dotClass(resolveStatus(presence[user.id], user.online)) || 'bg-white/25')} />
+            {presenceLine(resolveStatus(presence[user.id], user.online), user.lastSeenAt)}
+          </p>
+        )}
         {user.bio && <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-white/75">{user.bio}</p>}
 
         {/* three stats */}

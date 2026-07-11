@@ -371,6 +371,38 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applyPresence]);
 
+  // ---- last seen ----
+  // Presence evaporates the moment you close the app, so persist a timestamp:
+  // heartbeat while we're in the foreground, and one final write on the way out
+  // so "Active 2m ago" is accurate rather than however long ago the last tick
+  // happened to land.
+  //
+  // Invisible freezes it. A last-seen that keeps ticking while you're invisible
+  // tells anyone watching exactly when you're online, which is the one thing
+  // Invisible exists to prevent.
+  useEffect(() => {
+    if (!ready) return;
+    const touch = () => {
+      if (myStatusRef.current === 'invisible') return;
+      db.touchLastSeen(supa(), myId.current);
+    };
+    // Heartbeat only while we're actually on screen — a backgrounded tab that
+    // keeps ticking would report you as active while your phone is in a pocket.
+    const beat = () => { if (document.visibilityState === 'visible') touch(); };
+    beat();
+    const iv = setInterval(beat, 60000);
+    // Fires both on the way out (stamping the moment you left) and on the way
+    // back in. On mobile this is the only reliable "leaving" signal; pagehide
+    // frequently never runs.
+    document.addEventListener('visibilitychange', touch);
+    window.addEventListener('pagehide', touch);
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener('visibilitychange', touch);
+      window.removeEventListener('pagehide', touch);
+    };
+  }, [ready]);
+
   // -------------------------------- derived ----------------------------------
   const me: User = useMemo(
     () =>

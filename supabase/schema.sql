@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   bio         text default '',
   public_key  text not null,            -- base64 Curve25519 public key
   verified    boolean default false,
+  last_seen_at timestamptz,             -- frozen while the user is Invisible
   created_at  timestamptz default now()
 );
 

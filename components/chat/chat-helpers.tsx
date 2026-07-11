@@ -1,7 +1,7 @@
 'use client';
 
 import { useApp } from '@/lib/store';
-import { resolveStatus, statusLabel } from '@/lib/presence';
+import { resolveStatus, presenceLine } from '@/lib/presence';
 import type { Conversation } from '@/lib/types';
 
 export function useConversationMeta(conv: Conversation) {
@@ -12,11 +12,10 @@ export function useConversationMeta(conv: Conversation) {
   // live presence of the other person (1:1 only)
   const status = !conv.isGroup && others[0] ? resolveStatus(presence[others[0].id], others[0].online) : undefined;
   const online = !!status;
+  // live status if they're here, else last seen, else just their handle
   const subtitle = conv.isGroup
     ? `${conv.memberIds.length} members`
-    : status
-      ? statusLabel(status)
-      : `@${others[0]?.username}`;
+    : presenceLine(status, others[0]?.lastSeenAt) || `@${others[0]?.username}`;
 
   const convMessages = messages
     .filter((m) => m.conversationId === conv.id)

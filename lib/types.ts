@@ -10,6 +10,7 @@ export interface User {
   following: string[];
   verified?: boolean;
   online?: boolean;
+  lastSeenAt?: number;   // ms epoch; undefined = never seen / hidden
   private?: boolean;
 }
 

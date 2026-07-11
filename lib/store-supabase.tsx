@@ -224,11 +224,21 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   // available; this just guarantees eventual consistency.
   useEffect(() => {
     if (!ready) return;
-    const iv = setInterval(() => refreshConversations(), 4000);
-    const onVisible = () => { if (document.visibilityState === 'visible') refreshConversations(); };
+    const convIv = setInterval(() => refreshConversations(), 4000);
+    // Social data (posts, STORIES, users, notifications) also needs a fallback —
+    // realtime drops while the app is backgrounded, so without this a story
+    // posted while you were away would never appear until a full reload.
+    const socialIv = setInterval(() => reloadSocial(), 12000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') { refreshConversations(); reloadSocial(); }
+    };
     document.addEventListener('visibilitychange', onVisible);
-    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', onVisible); };
-  }, [ready, refreshConversations]);
+    return () => {
+      clearInterval(convIv);
+      clearInterval(socialIv);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [ready, refreshConversations, reloadSocial]);
 
   const refetchMessageMeta = useCallback(async (messageId: string) => {
     const supabase = sb.current!;

@@ -6,22 +6,33 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { Bookmark, Grid3x3, LogOut, MessageCircle, Settings, SlidersHorizontal, UserCheck, UserPlus, UserX, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { StatusButton } from '@/components/shell/status-control';
+import { StoryViewer } from '@/components/story/story-viewer';
 import { VerifiedBadge, PostCard } from '@/components/post/post-card';
 import { EditProfileModal } from './edit-profile-modal';
 import type { Post } from '@/lib/types';
 import { useApp } from '@/lib/store';
+import { resolveStatus } from '@/lib/presence';
 import { IS_DEMO } from '@/lib/config';
 import type { User } from '@/lib/types';
 import { compactNumber } from '@/lib/utils';
 
 export function ProfileView({ user }: { user: User }) {
-  const { me, posts, stories, messages, toggleFollow, createConversation, userById, signOut, blocked, toggleBlock } = useApp();
+  const { me, posts, stories, messages, toggleFollow, createConversation, userById, signOut, blocked, toggleBlock, presence } = useApp();
   const router = useRouter();
   const isMe = user.id === me.id;
   const following = me.following.includes(user.id);
   const [tab, setTab] = useState<'posts' | 'saved'>('posts');
   const [editing, setEditing] = useState(false);
   const [openPost, setOpenPost] = useState<Post | null>(null);
+  const [viewingStory, setViewingStory] = useState(false);
+
+  // this user's live (non-expired) moments — tap the avatar to view them
+  const liveStories = useMemo(
+    () => stories.filter((s) => s.authorId === user.id && s.expiresAt > Date.now()).sort((a, b) => a.createdAt - b.createdAt),
+    [stories, user.id]
+  );
+  const hasStory = liveStories.length > 0;
 
   const userPosts = posts.filter((p) => p.authorId === user.id).sort((a, b) => b.createdAt - a.createdAt);
   const savedPosts = posts.filter((p) => p.saves.includes(me.id));
@@ -43,7 +54,13 @@ export function ProfileView({ user }: { user: User }) {
   return (
     <div className="mx-auto max-w-2xl border-x border-white/5">
       <div className="flex flex-col items-center px-5 pb-4 pt-9 text-center sm:px-8">
-        <Avatar src={user.avatar} alt={user.name} size={104} online={user.online} ring />
+        {hasStory ? (
+          <button onClick={() => setViewingStory(true)} aria-label="View moment" className="rounded-full transition active:scale-95">
+            <Avatar src={user.avatar} alt={user.name} size={104} status={resolveStatus(presence[user.id], user.online)} ring />
+          </button>
+        ) : (
+          <Avatar src={user.avatar} alt={user.name} size={104} status={resolveStatus(presence[user.id], user.online)} />
+        )}
         <h1 className="headline mt-4 flex items-center gap-2 text-3xl leading-none">
           {user.name}
           {user.verified && <VerifiedBadge />}
@@ -61,6 +78,7 @@ export function ProfileView({ user }: { user: User }) {
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           {isMe ? (
             <>
+              <StatusButton />
               <button onClick={() => setEditing(true)} className="btn-ghost text-sm"><Settings className="h-4 w-4" /> Edit profile</button>
               <Link href="/settings" className="btn-ghost text-sm" aria-label="Settings"><SlidersHorizontal className="h-4 w-4" /></Link>
               {!IS_DEMO && (
@@ -133,6 +151,10 @@ export function ProfileView({ user }: { user: User }) {
       )}
 
       {isMe && <EditProfileModal open={editing} onClose={() => setEditing(false)} />}
+
+      {viewingStory && hasStory && (
+        <StoryViewer stories={liveStories} startIndex={0} onClose={() => setViewingStory(false)} />
+      )}
 
       {/* tap a grid post to open it (edit/delete via its ··· menu) */}
       <AnimatePresence>

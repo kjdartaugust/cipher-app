@@ -13,7 +13,7 @@ import { ensureKeyPair, loadKeyPair, storeKeyPair } from '@/lib/keys';
 
 export default function AuthPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -49,6 +49,15 @@ export default function AuthPage() {
     }
 
     try {
+      if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+          redirectTo: `${location.origin}/auth/callback?next=/auth/reset`,
+        });
+        if (error) throw error;
+        setInfo('If that email has an account, a reset link is on its way. Check your inbox.');
+        setLoading(false);
+        return;
+      }
       if (mode === 'signup') {
         const pair = await generateKeyPair();
         const salt = await randomSalt();
@@ -132,10 +141,14 @@ export default function AuthPage() {
         <div className="mb-8 flex flex-col items-center text-center">
           <Logo size="lg" showText={false} />
           <h1 className="mt-4 text-2xl font-bold">
-            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+            {mode === 'signin' ? 'Welcome back' : mode === 'signup' ? 'Create your account' : 'Reset your password'}
           </h1>
           <p className="mt-1 text-sm text-white/50">
-            {mode === 'signin' ? 'Sign in to your encrypted social space.' : 'Join Cipher — privacy is the default.'}
+            {mode === 'signin'
+              ? 'Sign in to your encrypted social space.'
+              : mode === 'signup'
+              ? 'Join Cipher — privacy is the default.'
+              : 'Enter your email and we’ll send you a reset link.'}
           </p>
         </div>
 
@@ -147,34 +160,61 @@ export default function AuthPage() {
             </>
           )}
           <Field icon={Mail} type="email" placeholder="Email" required value={form.email} onChange={set('email')} />
-          <Field icon={Lock} type="password" placeholder="Password" required minLength={6} value={form.password} onChange={set('password')} />
+          {mode !== 'reset' && (
+            <Field icon={Lock} type="password" placeholder="Password" required minLength={6} value={form.password} onChange={set('password')} />
+          )}
+
+          {mode === 'signin' && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => { setMode('reset'); setError(null); setInfo(null); }}
+                className="text-xs font-medium text-cipher-300 hover:text-cipher-200"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           {error && <p className="rounded-lg bg-rose-500/15 px-3 py-2 text-xs text-rose-300">{error}</p>}
           {info && <p className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs text-emerald-300">{info}</p>}
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Generating keys…' : (
+            {loading ? (mode === 'reset' ? 'Sending…' : 'Generating keys…') : (
               <>
-                {mode === 'signin' ? 'Sign in' : 'Create account'}
+                {mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
 
-          <div className="flex items-center gap-2 rounded-lg bg-cipher-600/10 px-3 py-2 text-xs text-cipher-200">
-            <KeyRound className="h-3.5 w-3.5 shrink-0" />
-            A unique encryption key pair is generated on your device at sign-up.
-          </div>
+          {mode !== 'reset' && (
+            <div className="flex items-center gap-2 rounded-lg bg-cipher-600/10 px-3 py-2 text-xs text-cipher-200">
+              <KeyRound className="h-3.5 w-3.5 shrink-0" />
+              A unique encryption key pair is generated on your device at sign-up.
+            </div>
+          )}
         </form>
 
         <p className="mt-5 text-center text-sm text-white/50">
-          {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-          <button
-            onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setInfo(null); }}
-            className="font-semibold text-cipher-300 hover:text-cipher-200"
-          >
-            {mode === 'signin' ? 'Sign up' : 'Sign in'}
-          </button>
+          {mode === 'reset' ? (
+            <button
+              onClick={() => { setMode('signin'); setError(null); setInfo(null); }}
+              className="font-semibold text-cipher-300 hover:text-cipher-200"
+            >
+              ← Back to sign in
+            </button>
+          ) : (
+            <>
+              {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+              <button
+                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setInfo(null); }}
+                className="font-semibold text-cipher-300 hover:text-cipher-200"
+              >
+                {mode === 'signin' ? 'Sign up' : 'Sign in'}
+              </button>
+            </>
+          )}
         </p>
 
         {IS_DEMO && (

@@ -514,12 +514,16 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     if (!msg) return;
     const enc = await encryptMessage(text, await unwrap(msg.conversationId));
     setState((s) => ({ ...s, messages: s.messages.map((m) => m.id === messageId ? { ...m, encrypted: enc, plaintext: text, editedAt: Date.now() } : m) }));
-    db.editMessage(supa(), messageId, enc.ciphertext, enc.nonce);
+    const { data, error } = await db.editMessage(supa(), messageId, enc.ciphertext, enc.nonce);
+    if (error) console.error('[cipher] editMessage write failed:', error.message);
+    else if (!data?.length) console.warn('[cipher] editMessage updated 0 rows — RLS or id mismatch:', messageId);
   }, [state.messages, unwrap]);
 
-  const deleteMessage = useCallback((messageId: string) => {
+  const deleteMessage = useCallback(async (messageId: string) => {
     setState((s) => ({ ...s, messages: s.messages.map((m) => m.id === messageId ? { ...m, deleted: true, plaintext: '', reactions: [] } : m) }));
-    db.deleteMessage(supa(), messageId);
+    const { data, error } = await db.deleteMessage(supa(), messageId);
+    if (error) console.error('[cipher] deleteMessage write failed:', error.message);
+    else if (!data?.length) console.warn('[cipher] deleteMessage updated 0 rows — RLS or id mismatch:', messageId);
   }, []);
 
   const markConversationRead = useCallback((conversationId: string) => {

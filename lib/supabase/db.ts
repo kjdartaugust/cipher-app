@@ -233,9 +233,11 @@ export const db = {
   reactUpsert: (s: DB, messageId: string, userId: string, emoji: string) =>
     s.from('message_reactions').upsert({ message_id: messageId, user_id: userId, emoji }),
 
+  // .select() so the caller can see how many rows were actually updated — an
+  // RLS-blocked UPDATE doesn't error, it silently affects 0 rows.
   editMessage: (s: DB, id: string, ciphertext: string, nonce: string) =>
-    s.from('messages').update({ ciphertext, nonce, edited_at: new Date().toISOString() }).eq('id', id),
-  deleteMessage: (s: DB, id: string) => s.from('messages').update({ deleted: true }).eq('id', id),
+    s.from('messages').update({ ciphertext, nonce, edited_at: new Date().toISOString() }).eq('id', id).select(),
+  deleteMessage: (s: DB, id: string) => s.from('messages').update({ deleted: true }).eq('id', id).select(),
 
   receiptDelivered: (s: DB, messageId: string, userId: string) =>
     s.from('message_receipts').upsert({ message_id: messageId, user_id: userId, delivered: true, at: new Date().toISOString() }),

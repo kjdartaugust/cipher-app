@@ -234,6 +234,13 @@ alter publication supabase_realtime add table public.comments;
 alter publication supabase_realtime add table public.follows;
 alter publication supabase_realtime add table public.stories;
 
+-- REPLICA IDENTITY FULL: required so Realtime can evaluate the RLS SELECT policy
+-- against the OLD row for UPDATE/DELETE events. Without it, message edits and
+-- soft-deletes (both UPDATEs) never reach the other participant, because the old
+-- row lacks conversation_id and is_member(NULL) filters the recipient out.
+alter table public.messages         replica identity full;
+alter table public.message_receipts replica identity full;
+
 -- Storage buckets (create in dashboard or via API):
 --   insert into storage.buckets (id, name, public) values
 --     ('avatars','avatars', true),

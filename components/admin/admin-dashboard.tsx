@@ -9,9 +9,10 @@ import {
 import { PageHeader } from '@/components/shell/page-header';
 import { UsersPanel } from './users-panel';
 import { ReportsPanel } from './reports-panel';
+import { LivePanel } from './live-panel';
 import { cn, compactNumber } from '@/lib/utils';
 
-type Tab = 'overview' | 'users' | 'reports';
+type Tab = 'overview' | 'live' | 'users' | 'reports';
 
 type Stats = {
   users: { total: number; new7: number; new30: number; suspended: number; admins: number };
@@ -63,7 +64,7 @@ export function AdminDashboard() {
         }
       >
         <div className="flex gap-1 px-5 sm:px-8">
-          {(['overview', 'users', 'reports'] as Tab[]).map((t) => (
+          {(['overview', 'live', 'users', 'reports'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -88,6 +89,7 @@ export function AdminDashboard() {
 
       {/* pb-32: the floating bottom nav is an overlay and will sit on top of the
           last row otherwise */}
+      {tab === 'live' && <div className="p-5 pb-32 sm:p-8 sm:pb-32"><LivePanel /></div>}
       {tab === 'users' && <div className="p-5 pb-32 sm:p-8 sm:pb-32"><UsersPanel /></div>}
       {tab === 'reports' && <div className="p-5 pb-32 sm:p-8 sm:pb-32"><ReportsPanel /></div>}
 

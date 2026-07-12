@@ -18,6 +18,7 @@ import {
   wrapPrivateKey,
 } from './crypto';
 import { loadKeyPair, storeKeyPair } from './keys';
+import { installErrorLog } from './error-log';
 import { callSummary } from './utils';
 import { sendPush } from './push';
 import type { KeyPair } from './crypto';
@@ -64,6 +65,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     async function boot(userId: string) {
       if (cancelled || myId.current === userId) return;
       myId.current = userId;
+      installErrorLog(userId);
       try {
         // Use whatever key this device already holds (NEVER generate here — the
         // login page is the single owner of key creation/recovery). If it's

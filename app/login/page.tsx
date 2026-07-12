@@ -179,8 +179,12 @@ export default function AuthPage() {
           {error && <p className="rounded-lg bg-rose-500/15 px-3 py-2 text-xs text-rose-300">{error}</p>}
           {info && <p className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs text-emerald-300">{info}</p>}
 
+          {/* Signing in does not generate anything — it unwraps the key you already
+              have. Saying "Generating keys" there was simply wrong. */}
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? (mode === 'reset' ? 'Sending…' : 'Generating keys…') : (
+            {loading ? (
+              mode === 'reset' ? 'Sending…' : mode === 'signup' ? 'Securing your account…' : 'Unlocking…'
+            ) : (
               <>
                 {mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
                 <ArrowRight className="h-4 w-4" />
@@ -189,9 +193,17 @@ export default function AuthPage() {
           </button>
 
           {mode !== 'reset' && (
-            <div className="flex items-center gap-2 rounded-lg bg-cipher-600/10 px-3 py-2 text-xs text-cipher-200">
-              <KeyRound className="h-3.5 w-3.5 shrink-0" />
-              A unique encryption key pair is generated on your device at sign-up.
+            <div className="flex items-start gap-2 rounded-lg bg-cipher-600/10 px-3 py-2 text-xs text-cipher-200">
+              <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {/* The key moment is the product, not plumbing — but phrase it as the
+                  promise it is, rather than as a status log of what the code is doing. */}
+              <span>
+                {loading && mode === 'signup'
+                  ? 'Creating your private key. It stays on this device — we never see it.'
+                  : loading
+                    ? 'Unlocking your messages on this device.'
+                    : 'Your private key is created on this device and never leaves it.'}
+              </span>
             </div>
           )}
         </form>

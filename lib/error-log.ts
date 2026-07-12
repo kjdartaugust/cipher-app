@@ -24,6 +24,10 @@ export function installErrorLog(userId: string) {
 
     const supabase = createClient();
     if (!supabase) return; // demo mode
+    // Do NOT add .select() here. Users have an INSERT policy on client_errors
+    // but deliberately no SELECT policy, and Postgres applies SELECT policies to
+    // INSERT ... RETURNING — so asking for the row back turns a working insert
+    // into a 403.
     await supabase.from('client_errors').insert({
       user_id: userId,
       message: message.slice(0, 1000),

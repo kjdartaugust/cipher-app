@@ -171,30 +171,35 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
             </button>
           </>
         )}
-        {!conv.isGroup && meta.others[0] && (
-          <button
-            onClick={() => setShowRingtone((s) => !s)}
-            className={`rounded-full p-2 hover:bg-white/10 ${showRingtone ? 'text-cipher-300' : 'text-white/50 hover:text-white'}`}
-            aria-label="Ringtone for this chat"
-          >
-            <Music className="h-5 w-5" />
-          </button>
-        )}
+        <button
+          onClick={() => setShowRingtone((s) => !s)}
+          className={`rounded-full p-2 hover:bg-white/10 ${showRingtone ? 'text-cipher-300' : 'text-white/50 hover:text-white'}`}
+          aria-label="Ringtone for this chat"
+        >
+          <Music className="h-5 w-5" />
+        </button>
         <button onClick={() => setShowSafety((s) => !s)} className="rounded-full p-2 text-cipher-300 hover:bg-white/10">
           <ShieldCheck className="h-5 w-5" />
         </button>
       </header>
 
-      {showRingtone && !conv.isGroup && meta.others[0] && (
+      {showRingtone && (conv.isGroup || meta.others[0]) && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           className="overflow-hidden border-b border-white/5 bg-white/[0.02] px-4 py-3"
         >
           <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-white/60">
-            <Music className="h-3.5 w-3.5" /> Ringtone for {meta.others[0].name}
+            <Music className="h-3.5 w-3.5" /> Ringtone for {conv.isGroup ? meta.title : meta.others[0].name}
           </p>
-          <RingtonePicker contactId={meta.others[0].id} />
+          {conv.isGroup && (
+            <p className="mb-2 text-[11px] text-white/35">
+              Plays whenever anyone in this group starts a call, whatever tone you&apos;ve given them
+              individually.
+            </p>
+          )}
+          {/* a group keys off the conversation, a 1:1 off the person */}
+          <RingtonePicker targetId={conv.isGroup ? conv.id : meta.others[0].id} />
         </motion.div>
       )}
 

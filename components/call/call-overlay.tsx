@@ -35,8 +35,12 @@ export function CallOverlay() {
   // buzz on incoming (Android supports Vibration; iOS ignores it).
   useEffect(() => {
     if (state === 'incoming') {
-      // use the caller's assigned ringtone if they have one, else the default
-      const override = call ? getContactRingtone(call.peerId) : null;
+      // Most specific tone wins: the group's own, then the person calling, then
+      // the default. A group you've given a tone should sound like that group no
+      // matter which member dials.
+      const override = call
+        ? (call.isGroup ? getContactRingtone(call.convId) : null) ?? getContactRingtone(call.peerId)
+        : null;
       startRing('incoming', override ?? undefined);
     } else if (state === 'outgoing') startRing('outgoing');
     else stopRing();
@@ -49,7 +53,7 @@ export function CallOverlay() {
     }
     return () => { stopRing(); if (vib) clearInterval(vib); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, call?.peerId]);
+  }, [state, call?.peerId, call?.convId, call?.isGroup]);
 
   if (state === 'idle' || !call) return null;
   const mmss = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;

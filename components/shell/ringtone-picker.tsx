@@ -30,17 +30,18 @@ function Equalizer() {
   );
 }
 
-// Ringtone picker. With `contactId` it manages that person's ringtone (with a
-// "Default" option that clears it); otherwise it manages the global default.
-// Tap ▶ to preview (it turns into ⏸ while playing — tap again to stop), tap the
-// row to select. Per-device (localStorage).
-export function RingtonePicker({ contactId }: { contactId?: string }) {
-  const perContact = !!contactId;
-  const options = perContact ? [{ id: 'default', label: 'Default' }, ...RINGTONE_OPTIONS] : RINGTONE_OPTIONS;
+// Ringtone picker. With `targetId` it manages the tone for one caller — a person
+// (user id) or a group (conversation id), which are stored the same way — and
+// offers a "Default" option that clears it. Without it, it manages the global
+// default. Tap ▶ to preview (tap again to stop), tap the row to select.
+// Per-device (localStorage).
+export function RingtonePicker({ targetId }: { targetId?: string }) {
+  const perTarget = !!targetId;
+  const options = perTarget ? [{ id: 'default', label: 'Default' }, ...RINGTONE_OPTIONS] : RINGTONE_OPTIONS;
 
   const [sel, setSel] = useState<string>(() => {
-    if (typeof window === 'undefined') return perContact ? 'default' : 'chime';
-    if (perContact) return getContactRingtone(contactId!) ?? 'default';
+    if (typeof window === 'undefined') return perTarget ? 'default' : 'chime';
+    if (perTarget) return getContactRingtone(targetId!) ?? 'default';
     return getRingtone();
   });
   const [playing, setPlaying] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export function RingtonePicker({ contactId }: { contactId?: string }) {
     });
   }
   function choose(id: string) {
-    if (perContact) setContactRingtone(contactId!, id === 'default' ? null : id);
+    if (perTarget) setContactRingtone(targetId!, id === 'default' ? null : id);
     else setRingtone(id);
     setSel(id);
     preview(id);

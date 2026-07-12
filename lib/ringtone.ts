@@ -170,16 +170,20 @@ export function setRingtone(id: string) {
   try { localStorage.setItem('cipher.ringtone', id); } catch {}
 }
 
-// ---- per-contact ---------------------------------------------------------
-export function getContactRingtone(userId: string): string | null {
+// ---- per-caller ----------------------------------------------------------
+// `id` is a user id for a 1:1 caller, or a conversation id for a group. They
+// share one map because a group and a person are the same thing here: something
+// that can ring you. On an incoming group call the group's tone wins, and the
+// caller's own tone is the fallback (see call-overlay).
+export function getContactRingtone(id: string): string | null {
   ensure();
-  return (contacts && contacts[userId]) || null;
+  return (contacts && contacts[id]) || null;
 }
-export function setContactRingtone(userId: string, id: string | null) {
+export function setContactRingtone(id: string, tone: string | null) {
   ensure();
   if (!contacts) contacts = {};
-  if (id && RINGTONES.some((r) => r.id === id)) contacts[userId] = id;
-  else delete contacts[userId];
+  if (tone && RINGTONES.some((r) => r.id === tone)) contacts[id] = tone;
+  else delete contacts[id];
   try { localStorage.setItem('cipher.ringtones.contacts', JSON.stringify(contacts)); } catch {}
 }
 

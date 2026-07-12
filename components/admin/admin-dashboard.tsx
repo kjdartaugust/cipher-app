@@ -86,10 +86,12 @@ export function AdminDashboard() {
         </div>
       </PageHeader>
 
-      {tab === 'users' && <div className="p-5 sm:p-8"><UsersPanel /></div>}
-      {tab === 'reports' && <div className="p-5 sm:p-8"><ReportsPanel /></div>}
+      {/* pb-32: the floating bottom nav is an overlay and will sit on top of the
+          last row otherwise */}
+      {tab === 'users' && <div className="p-5 pb-32 sm:p-8 sm:pb-32"><UsersPanel /></div>}
+      {tab === 'reports' && <div className="p-5 pb-32 sm:p-8 sm:pb-32"><ReportsPanel /></div>}
 
-      <div className={cn('space-y-8 p-5 sm:p-8', tab !== 'overview' && 'hidden')}>
+      <div className={cn('space-y-8 p-5 pb-32 sm:p-8 sm:pb-32', tab !== 'overview' && 'hidden')}>
         {/* The thing anyone opening an admin panel for a messaging app assumes
             they can do — read messages — is the one thing that cannot exist. */}
         <div className="flex items-start gap-3 rounded-2xl border border-cipher-500/25 bg-cipher-600/10 p-4">

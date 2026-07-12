@@ -19,10 +19,14 @@ alter table public.profiles add column if not exists suspended_reason text;
 -- themselves, which would make the whole thing decorative. Postgres has no
 -- column-level RLS, so we enforce it with a trigger: only the service role (a
 -- server-side API route we control) may change is_admin or suspended.
+-- NOT security definer, and that is the whole point. Inside a SECURITY DEFINER
+-- function current_user is the function's OWNER (postgres), not the caller — so
+-- the check below would pass for everybody and the guard would be decorative.
+-- As SECURITY INVOKER, current_user is the role PostgREST is actually running
+-- as: 'authenticated' for a signed-in user, 'service_role' for our API routes.
 create or replace function public.guard_privileged_profile_columns()
 returns trigger
 language plpgsql
-security definer
 set search_path = public
 as $$
 begin

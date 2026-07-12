@@ -382,9 +382,14 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   // Invisible exists to prevent.
   useEffect(() => {
     if (!ready) return;
-    const touch = () => {
+    // Must be awaited. A supabase query builder is a lazy thenable — it does not
+    // send the request until something calls .then on it, so the original
+    // fire-and-forget version issued no HTTP call at all and last_seen_at stayed
+    // null for everyone.
+    const touch = async () => {
       if (myStatusRef.current === 'invisible') return;
-      db.touchLastSeen(supa(), myId.current);
+      const { error } = await db.touchLastSeen(supa(), myId.current);
+      if (error) console.warn('[cipher] last-seen write failed:', error.message);
     };
     // Heartbeat only while we're actually on screen — a backgrounded tab that
     // keeps ticking would report you as active while your phone is in a pocket.

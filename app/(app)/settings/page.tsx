@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Bell, CircleDot, KeyRound, Lock, Music, ShieldCheck, Trash2, UserX } from 'lucide-react';
+import { AlertTriangle, Bell, ChevronRight, CircleDot, KeyRound, Lock, Music, ShieldCheck, Trash2, UserX } from 'lucide-react';
 import { PageHeader } from '@/components/shell/page-header';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusOptions } from '@/components/shell/status-control';
@@ -70,6 +70,21 @@ export default function SettingsPage() {
       <PageHeader kicker="Account" title="Settings" />
 
       <div className="space-y-8 p-5 sm:p-8">
+        {/* Admin — the sidebar shield is desktop-only, so this is the way in on a phone */}
+        {me.isAdmin && (
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 rounded-2xl border border-cipher-500/30 bg-cipher-600/10 p-4 transition hover:bg-cipher-600/15"
+          >
+            <ShieldCheck className="h-5 w-5 shrink-0 text-cipher-300" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-cipher-100">Admin dashboard</p>
+              <p className="text-xs text-white/50">Metrics, users, and the report queue.</p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+          </Link>
+        )}
+
         {/* Status */}
         <Section title="Status" icon={CircleDot}>
           <p className="-mt-1 text-xs text-white/50">
